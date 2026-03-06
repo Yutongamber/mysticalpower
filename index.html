@@ -376,30 +376,19 @@
         <div id="divination-select-page" class="page">
             <div class="card">
                 <div class="card-title">起一卦</div>
-                <div class="hint">请输入你想问的问题</div>
-                <textarea class="text-input" id="divination-question-new" rows="3" placeholder="例如：我的事业最近会有什么发展？"></textarea>
+                <div class="hint">心中默念所问之事（可选）</div>
+                <textarea class="text-input" id="divination-question-new" rows="3" placeholder="可选：输入你想问的问题，留空亦可起卦"></textarea>
             </div>
-            
+
             <div class="card" style="padding:16px 20px;">
                 <div class="hint" style="margin-bottom:12px;">选择起卦方式</div>
                 <div style="display:flex; gap:12px;">
-                    <button class="primary-btn" style="flex:1; margin-top:0;" onclick="startCoinDivinationNew()">🎲 铜钱</button>
-                    <button class="primary-btn" style="flex:1; margin-top:0;" onclick="startTimeDivinationNew()">⏰ 时间</button>
+                    <button class="primary-btn" style="flex:1; margin-top:0;" onclick="startCoinDivinationNew()">🎲 铜钱<div style="font-size:10px;opacity:0.6;margin-top:4px;">随机摇卦</div></button>
+                    <button class="primary-btn" style="flex:1; margin-top:0;" onclick="startTimeDivinationNew()">⏰ 时间<div style="font-size:10px;opacity:0.6;margin-top:4px;">当下即卦</div></button>
                 </div>
             </div>
-            
-            <button class="secondary-btn" onclick="openHistory()">📜 历史记录</button>
-        </div>
 
-        <div id="divination-page" class="page">
-            <div class="card">
-                <div class="card-title">问</div>
-                <div class="hint">请在心中默念你的问题<br><span style="opacity:0.5; font-size:12px;">然后在下方输入</span></div>
-                <textarea class="text-input" id="divination-question" rows="4" placeholder="例如：我的事业最近会有什么发展？"></textarea>
-                <div style="display:none;" id="time-divination-hint" class="hint" style="margin-top:12px;">时间起卦也可以输入问题哦～</div>
-                <button class="primary-btn" onclick="nextStep(2)">下一步 →</button>
-                <button class="secondary-btn" style="margin-top:12px;" onclick="goHome()">← 返回</button>
-            </div>
+            <button class="secondary-btn" onclick="openHistory()">📜 历史记录</button>
         </div>
 
         <div id="shake-page" class="page">
@@ -489,7 +478,7 @@
     </div>
 
     <script>
-        const hexagrams = ['乾为天', '坤为地', '地天泰', '天地否', '水天需', '山水蒙'];
+        const hexagrams = ['乾为天', '坤为地', '地天泰', '天地否', '水天需', '山水蒙', '天风姤', '地雷复', '地泽临', '水风井', '山地剥', '火地晋', '地火明夷', '风火家人', '火泽睽', '水山蹇', '雷水解', '山泽损', '风雷益', '泽天夬', '天雷无妄', '山天大畜'];
         const hexagramSymbols = {
             '乾为天': ['yang', 'yang', 'yang', 'yang', 'yang', 'yang'],
             '坤为地': ['yin', 'yin', 'yin', 'yin', 'yin', 'yin'],
@@ -502,7 +491,18 @@
             '地泽临': ['yang', 'yang', 'yin', 'yin', 'yin', 'yin'],
             '天山遁': ['yin', 'yin', 'yin', 'yang', 'yang', 'yang'],
             '水风井': ['yin', 'yang', 'yang', 'yang', 'yin', 'yang'],
-            '山地剥': ['yin', 'yin', 'yin', 'yin', 'yin', 'yang']
+            '山地剥': ['yin', 'yin', 'yin', 'yin', 'yin', 'yang'],
+            '火地晋': ['yang', 'yin', 'yin', 'yang', 'yin', 'yang'],
+            '地火明夷': ['yin', 'yang', 'yin', 'yin', 'yin', 'yin'],
+            '风火家人': ['yang', 'yin', 'yang', 'yang', 'yang', 'yin'],
+            '火泽睽': ['yang', 'yang', 'yin', 'yang', 'yin', 'yang'],
+            '水山蹇': ['yin', 'yang', 'yin', 'yang', 'yin', 'yang'],
+            '雷水解': ['yang', 'yin', 'yang', 'yin', 'yin', 'yang'],
+            '山泽损': ['yang', 'yang', 'yin', 'yang', 'yin', 'yin'],
+            '风雷益': ['yang', 'yin', 'yin', 'yang', 'yang', 'yin'],
+            '泽天夬': ['yang', 'yang', 'yang', 'yang', 'yang', 'yin'],
+            '天雷无妄': ['yang', 'yin', 'yin', 'yang', 'yang', 'yang'],
+            '山天大畜': ['yang', 'yang', 'yang', 'yang', 'yin', 'yin']
         };
         const hexagramDb = {
             '乾为天': { oracle:'天行健，君子以自强不息', current:'你心中充满力量，如太阳初升，万物复苏。', meaning:'乾卦象天，六爻皆阳，如日中天，象征刚健进取。', trend:'若能保持这份进取心，如天体运行般永不停息，未来会越来越宽广。', advice:'保持积极的心态，像天一样刚健有力；同时保持谦虚，满招损谦受益。' },
@@ -515,11 +515,21 @@
             '地雷复': { oracle:'雷在地中，复；先王以至日闭关', current:'阳气回复，万物复苏。这是一个重生和恢复的时期。', meaning:'上坤下震，雷在地中，象征阳气回复、万物复苏，是重生之象。', trend:'若能顺应时机，像春雷唤醒万物一样积极行动，未来会越来越好。', advice:'把握复苏的时机，积极行动；保持乐观，相信否极泰来。' },
             '地泽临': { oracle:'泽上有地，临；君子以教思无穷', current:'居高临下，泽被万物。你处于有利位置，可以帮助他人。', meaning:'上坤下兑，泽上有地，象征居高临下、恩泽四方，需要包容和教导。', trend:'若能以包容之心对待他人，像大地容纳湖泽一样，未来会更顺利。', advice:'保持谦虚，多帮助他人；以身作则，用行动影响身边的人。' },
             '水风井': { oracle:'木上有水，井；君子以劳民劝相', current:'井水养人，源源不断。你正处于持续积累和奉献的阶段。', meaning:'上坎下巽，木上有水，象征井水养人、源源不断，需要持续积累。', trend:'若能持续积累，像井水一样不断涌出，未来会越来越富足。', advice:'持续学习，不断积累；像井水养人一样，多为他人着想。' },
-            '山地剥': { oracle:'山附于地，剥；上以厚下安宅', current:'山崩地裂，剥落之时。这是一个需要退守和保存实力的时期。', meaning:'上艮下坤，山附于地，象征剥落、衰退，需要退守和等待。', trend:'若能保存实力，像山依附于地一样稳重，未来会有转机。', advice:'韬光养晦，保存实力；不要冒险，等待更好的时机。' }
+            '山地剥': { oracle:'山附于地，剥；上以厚下安宅', current:'山崩地裂，剥落之时。这是一个需要退守和保存实力的时期。', meaning:'上艮下坤，山附于地，象征剥落、衰退，需要退守和等待。', trend:'若能保存实力，像山依附于地一样稳重，未来会有转机。', advice:'韬光养晦，保存实力；不要冒险，等待更好的时机。' },
+            '火地晋': { oracle:'明出地上，晋；君子以自昭明德', current:'日出东方，光明渐进。你正处于上升期，前途光明。', meaning:'上离下坤，太阳升起，象征晋升、进步，是光明之象。', trend:'若能保持进取，像太阳东升一样持续前进，未来会越来越光明。', advice:'积极进取，展现才能；保持谦虚，稳步前进。' },
+            '地火明夷': { oracle:'明入地中，明夷；君子以莅众用晦而明', current:'光明隐没，韬光养晦之时。需要隐藏锋芒，等待时机。', meaning:'上坤下离，太阳入地，象征光明受损、需要隐忍。', trend:'若能韬光养晦，保持内心光明，终会迎来转机。', advice:'内敛锋芒，静待时机；保持内心光明，不失本心。' },
+            '风火家人': { oracle:'风自火出，家人；君子以言有物而行有恒', current:'风助火势，家庭和睦。重视家庭关系，以和为贵。', meaning:'上巽下离，风从火出，象征家庭、内部关系的和谐。', trend:'若能维护好内部关系，基础稳固，外部发展自然顺利。', advice:'重视家庭，言行一致；先齐家，后治业。' },
+            '火泽睽': { oracle:'上火下泽，睽；君子以同而异', current:'火上泽下，方向相背。可能遇到分歧，需要求同存异。', meaning:'上离下兑，火向上水向下，象征分离、不合，需要调和。', trend:'若能求同存异，尊重差异，分歧终会化解。', advice:'尊重差异，寻求共识；以柔克刚，化解矛盾。' },
+            '水山蹇': { oracle:'山上有水，蹇；君子以反身修德', current:'前路艰难，举步维艰。遇到阻碍，需要反思和修正。', meaning:'上坎下艮，山上有险，象征困难、阻碍，需要谨慎前行。', trend:'若能反思自省，找到问题根源，困难终会克服。', advice:'遇困反思，修正方向；不要蛮干，寻求正确的方法。' },
+            '雷水解': { oracle:'雷雨作，解；君子以赦过宥罪', current:'雷雨交作，困难化解。问题正在得到解决，曙光在前。', meaning:'上震下坎，雷雨俱作，象征解除、化解，是转机之象。', trend:'困难正在化解，若能把握时机，未来会更加顺利。', advice:'把握解困时机，宽容待人；解决问题后，稳步前进。' },
+            '山泽损': { oracle:'山下有泽，损；君子以惩忿窒欲', current:'减损自己，利益他人。这是一个需要付出的时期。', meaning:'上艮下兑，山下有泽，象征减损、付出，需要克制。', trend:'若能适当付出，控制欲望，长远来看会有所收获。', advice:'适度付出，克制欲望；损小利以成大义。' },
+            '风雷益': { oracle:'风雷，益；君子以见善则迁，有过则改', current:'风雷交助，运势增益。这是一个获得帮助和增长的时期。', meaning:'上巽下震，风雷相助，象征增益、帮助，是吉祥之象。', trend:'若能善加利用，乘势而上，未来会有更大的发展。', advice:'把握机遇，积极行动；见贤思齐，不断进步。' },
+            '泽天夬': { oracle:'泽上于天，夬；君子以施禄及下', current:'决断之时，当机立断。需要果断做出决定。', meaning:'上兑下乾，泽水升天，象征决断、果断，需要当机立断。', trend:'若能果断决策，抓住时机，未来会有突破。', advice:'当断则断，果断行动；但也要谨慎，不可莽撞。' },
+            '天雷无妄': { oracle:'天下雷行，物与无妄', current:'顺应天道，无妄之行。保持真诚，顺其自然。', meaning:'上乾下震，天下雷动，象征真实、无妄，要顺应自然。', trend:'若能保持真诚，顺应天道，一切自然顺利。', advice:'真诚待人，顺应自然；不要妄求，脚踏实地。' },
+            '山天大畜': { oracle:'天在山中，大畜；君子以多识前言往行', current:'积蓄力量，大有可为。这是一个积累和准备的时期。', meaning:'上艮下乾，天在山中，象征积蓄、准备，需要厚积薄发。', trend:'若能持续积累，厚积薄发，未来会有大的作为。', advice:'多学习积累，厚积薄发；时机成熟时，大展宏图。' }
         };
-        const changedHexagramMap = { '乾为天':'天风姤','坤为地':'地雷复','地天泰':'地泽临','天地否':'天地否','水天需':'水风井','山水蒙':'山地剥' };
-        const fortunePhrases = ['天行健，君子以自强不息','地势坤，君子以厚德载物','天地交泰，君子以裁成天地之道','天地不交，君子以俭德辟难','云上于天，君子以饮食宴乐','山下出泉，君子以果行育德'];
-        
+        const fortunePhrases = ['天行健，君子以自强不息', '地势坤，君子以厚德载物', '天地交泰，君子以裁成天地之道', '天地不交，君子以俭德辟难', '云上于天，君子以饮食宴乐', '山下出泉，君子以果行育德'];
+
         let currentQuestion = '';
         let resultPrimary = '';
         let resultChanging = 0;
@@ -529,6 +539,41 @@
         function hashCode(str) { let hash=0; for(let i=0;i<str.length;i++){ const char=str.charCodeAt(i); hash=((hash<<5)-hash)+char; hash=hash&hash; } return hash; }
         function seededRandom(seed) { return function() { seed=(seed*9301+49297)%233280; return seed/233280; }; }
         function getUserId() { let userId = localStorage.getItem('divination_user_id'); if(!userId){ userId='user_'+Math.random().toString(36).substr(2,9); localStorage.setItem('divination_user_id',userId); } return userId; }
+
+        // 统一的起卦逻辑
+        function generateDivination(seed) {
+            const random = seededRandom(seed);
+            const pi = Math.floor(random() * hexagrams.length);
+            resultPrimary = hexagrams[pi];
+            resultChanging = Math.floor(random() * 6) + 1;
+
+            // 动态计算变卦：根据变爻位置翻转阴阳
+            const originalLines = hexagramSymbols[resultPrimary] || ['yang', 'yang', 'yang', 'yang', 'yang', 'yang'];
+            const changedLines = [...originalLines];
+            changedLines[resultChanging - 1] = changedLines[resultChanging - 1] === 'yang' ? 'yin' : 'yang';
+
+            // 查找变卦名称
+            resultChanged = findHexagramByLines(changedLines) || resultPrimary;
+        }
+
+        // 根据爻象数组查找卦名
+        function findHexagramByLines(lines) {
+            for (const [name, symbol] of Object.entries(hexagramSymbols)) {
+                if (symbol.length === lines.length && symbol.every((s, i) => s === lines[i])) {
+                    return name;
+                }
+            }
+            return null;
+        }
+
+        // 显示卦象结果
+        function displayDivinationResult() {
+            renderHexagramSymbol(resultPrimary, 'result-primary-symbol');
+            renderHexagramSymbol(resultChanged, 'result-changed-symbol');
+            document.getElementById('result-primary').textContent = resultPrimary;
+            document.getElementById('result-changing').textContent = '第' + resultChanging + '爻';
+            document.getElementById('result-changed').textContent = resultChanged;
+        }
 
         // 生成卦象符号HTML
         function renderHexagramSymbol(hexagramName, containerId) {
@@ -581,36 +626,26 @@
         }
 
         function startCoinDivinationNew() {
-            const q = document.getElementById('divination-question-new').value;
-            if(!q.trim()){ alert('请输入问题'); return; }
-            currentQuestion = q;
+            const q = document.getElementById('divination-question-new').value.trim();
+            currentQuestion = q || '随心一卦';
             isTimeDivination = false;
-            document.getElementById('divination-question').value = q;
             resetShakePage();
             showPage('shake-page');
         }
 
         function startTimeDivinationNew() {
-            const q = document.getElementById('divination-question-new').value;
-            currentQuestion = q || '时间起卦';
+            const q = document.getElementById('divination-question-new').value.trim();
+            currentQuestion = q || '随心一卦';
             isTimeDivination = true;
-            document.getElementById('divination-question').value = q;
-            
-            const now=new Date();
-            const timeStr=now.toLocaleString('zh-CN');
-            const seed=Math.abs(hashCode(timeStr + (q || '')));
-            const random=seededRandom(seed);
-            const pi=Math.floor(random()*hexagrams.length);
-            resultPrimary=hexagrams[pi];
-            resultChanging=Math.floor(random()*6)+1;
-            resultChanged=changedHexagramMap[resultPrimary]||resultPrimary;
-            
-            renderHexagramSymbol(resultPrimary, 'result-primary-symbol');
-            renderHexagramSymbol(resultChanged, 'result-changed-symbol');
-            document.getElementById('result-primary').textContent=resultPrimary;
-            document.getElementById('result-changing').textContent='第'+resultChanging+'爻';
-            document.getElementById('result-changed').textContent=resultChanged;
-            
+
+            // 时间起卦：种子 = 当前时间(精确到秒) + 用户ID，问题不影响卦象
+            const now = new Date();
+            const timeKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${now.getHours()}-${now.getMinutes()}-${now.getSeconds()}`;
+            const seed = Math.abs(hashCode(timeKey + getUserId()));
+
+            generateDivination(seed);
+            displayDivinationResult();
+
             saveToHistory(currentQuestion, resultPrimary, resultChanged, resultChanging);
             showPage('result-page');
         }
@@ -621,8 +656,6 @@
             resultChanging=0;
             resultChanged='';
             isTimeDivination=false;
-            document.getElementById('divination-question').value='';
-            document.getElementById('time-divination-hint').style.display='none';
             resetShakePage();
             showPage('home-page');
         }
@@ -648,60 +681,14 @@
             localStorage.setItem('last_daily_draw_date', today);
         }
 
-        function startDivination() {
-            isTimeDivination = false;
-            document.getElementById('time-divination-hint').style.display = 'none';
-            showPage('divination-page');
-        }
-
-        function startTimeDivination() {
-            isTimeDivination = true;
-            document.getElementById('time-divination-hint').style.display = 'block';
-            document.getElementById('divination-question').placeholder = '例如：此时此刻，我的运势如何？（可选）';
-            showPage('divination-page');
-        }
-
-        function nextStep(step) {
-            if(step===2){
-                const q=document.getElementById('divination-question').value;
-                
-                if (isTimeDivination) {
-                    currentQuestion = q || '时间起卦';
-                    const now=new Date();
-                    const timeStr=now.toLocaleString('zh-CN');
-                    
-                    const seed=Math.abs(hashCode(timeStr + (q || '')));
-                    const random=seededRandom(seed);
-                    const pi=Math.floor(random()*hexagrams.length);
-                    resultPrimary=hexagrams[pi];
-                    resultChanging=Math.floor(random()*6)+1;
-                    resultChanged=changedHexagramMap[resultPrimary]||resultPrimary;
-                    
-                    renderHexagramSymbol(resultPrimary, 'result-primary-symbol');
-                    renderHexagramSymbol(resultChanged, 'result-changed-symbol');
-                    document.getElementById('result-primary').textContent=resultPrimary;
-                    document.getElementById('result-changing').textContent='第'+resultChanging+'爻';
-                    document.getElementById('result-changed').textContent=resultChanged;
-                    
-                    saveToHistory(currentQuestion, resultPrimary, resultChanged, resultChanging);
-                    showPage('result-page');
-                } else {
-                    if(!q.trim()){ alert('请输入问题'); return; }
-                    currentQuestion=q;
-                    resetShakePage();
-                    showPage('shake-page');
-                }
-            }
-        }
-
         function doShake() {
-            document.getElementById('shake-btn').style.display='none';
+            document.getElementById('shake-btn').style.display = 'none';
             document.getElementById('shake-loading').classList.add('show');
             document.getElementById('coins-container').classList.add('shake-animation');
             document.querySelectorAll('.coin').forEach(coin => {
                 coin.classList.add('shaking');
             });
-            
+
             const coins = ['◯', '●', '◯', '●', '◯', '●'];
             let coinIndex = 0;
             const coinInterval = setInterval(() => {
@@ -716,24 +703,16 @@
                     });
                 }
             }, 100);
-            
-            setTimeout(()=>{
-                const seed=Math.abs(hashCode(currentQuestion+Date.now()));
-                const random=seededRandom(seed);
-                const pi=Math.floor(random()*hexagrams.length);
-                resultPrimary=hexagrams[pi];
-                resultChanging=Math.floor(random()*6)+1;
-                resultChanged=changedHexagramMap[resultPrimary]||resultPrimary;
-                
-                renderHexagramSymbol(resultPrimary, 'result-primary-symbol');
-                renderHexagramSymbol(resultChanged, 'result-changed-symbol');
-                document.getElementById('result-primary').textContent=resultPrimary;
-                document.getElementById('result-changing').textContent='第'+resultChanging+'爻';
-                document.getElementById('result-changed').textContent=resultChanged;
-                
+
+            setTimeout(() => {
+                // 铜钱起卦：种子 = 时间戳 + 用户ID，问题不影响卦象
+                const seed = Math.abs(hashCode(Date.now().toString() + getUserId()));
+                generateDivination(seed);
+                displayDivinationResult();
+
                 saveToHistory(currentQuestion, resultPrimary, resultChanged, resultChanging);
                 showPage('result-page');
-            },1800);
+            }, 1800);
         }
 
         function showInterpretation() {
@@ -746,10 +725,6 @@
             document.getElementById('inter-advice').textContent=data.advice;
             
             showPage('interpretation-page');
-        }
-
-        function startEmotion() {
-            alert('情绪陪伴模块开发中...\n\n敬请期待！');
         }
 
         // 历史记录功能
@@ -766,6 +741,18 @@
             localStorage.setItem('divination_history', JSON.stringify(history));
         }
 
+        // 添加 openHistory 函数（之前缺失）
+        function openHistory() {
+            showHistory();
+        }
+
+        // HTML 转义，防止 XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
         function showHistory() {
             const history = JSON.parse(localStorage.getItem('divination_history') || '[]');
             const container = document.getElementById('history-list');
@@ -775,8 +762,8 @@
             } else {
                 container.innerHTML = history.map((item, index) => `
                     <div class="history-item" onclick="viewHistoryItem(${index})">
-                        <div class="history-question">${item.question}</div>
-                        <div class="history-hexagram">${item.primary} → ${item.changed}</div>
+                        <div class="history-question">${escapeHtml(item.question)}</div>
+                        <div class="history-hexagram">${escapeHtml(item.primary)} → ${escapeHtml(item.changed)}</div>
                         <div class="history-time">${new Date(item.timestamp).toLocaleString('zh-CN')}</div>
                     </div>
                 `).join('');
