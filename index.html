@@ -306,6 +306,7 @@
         <div class="header">
             <h1>易经占卜</h1>
             <div class="subtitle">观其象而知其意</div>
+            <div class="date-display" id="current-date" style="margin-top:12px; font-size:12px; opacity:0.5; letter-spacing:2px;"></div>
         </div>
 
         <div id="home-page" class="page active">
@@ -892,6 +893,17 @@
             }
         }
 
+        function displayCurrentDate() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1;
+            const day = now.getDate();
+            const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+            const weekday = weekdays[now.getDay()];
+            const dateStr = `${year}年${month}月${day}日 星期${weekday}`;
+            document.getElementById('current-date').textContent = dateStr;
+        }
+
         function checkDailyDrawn() {
             const today=new Date().toDateString();
             const lastDrawDate=localStorage.getItem('last_daily_draw_date');
@@ -903,6 +915,7 @@
             }
         }
 
+        displayCurrentDate();
         checkDailyDrawn();
     </script>
 </body>
