@@ -285,7 +285,7 @@
                 </div>
             </div>
 
-            <div class="home-card" onclick="openDivination()">
+            <div class="home-card" onclick="startDivinationRitual()">
                 <div class="home-card-content">
                     <div class="home-card-icon">🎲</div>
                     <div class="home-card-text">
@@ -355,84 +355,99 @@
             <button class="secondary-btn" onclick="openHistory()">📜 历史记录</button>
         </div>
 
-        <div id="divination-page" class="page">
+        <div id="ritual-step1" class="page">
             <div class="card">
-                <div class="card-title">问</div>
-                <div class="hint">请在心中默念你的问题<br><span style="opacity:0.5; font-size:12px;">然后在下方输入</span></div>
-                <textarea class="text-input" id="divination-question" rows="4" placeholder="例如：我的事业最近会有什么发展？"></textarea>
-                <div style="display:none;" id="time-divination-hint" class="hint" style="margin-top:12px;">时间起卦也可以输入问题哦～</div>
-                <button class="primary-btn" onclick="nextStep(2)">下一步 →</button>
+                <div class="card-title">起卦 · 第一步</div>
+                <div class="hint">
+                    请安静片刻<br>
+                    <span style="opacity:0.7;">在心中默念你的问题</span>
+                </div>
+                <textarea class="text-input" id="ritual-question" rows="4" placeholder="例如：我的事业最近会有什么发展？"></textarea>
+                <button class="primary-btn" onclick="goToRitualStep2()">下一步 →</button>
                 <button class="secondary-btn" style="margin-top:12px;" onclick="goHome()">← 返回</button>
             </div>
         </div>
 
-        <div id="shake-page" class="page">
+        <div id="ritual-step2" class="page">
             <div class="card">
-                <div class="card-title">摇</div>
-                <div class="hint">点击下方按钮，开始摇卦</div>
-                <div class="coins-container" id="coins-container">
-                    <div class="coin" id="coin1">◯</div>
-                    <div class="coin" id="coin2">◯</div>
-                    <div class="coin" id="coin3">◯</div>
+                <div class="card-title">起卦 · 第二步</div>
+                <div class="hint">选择起卦方式</div>
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                    <button class="primary-btn" onclick="startCoinRitual()">🎲 铜钱起卦</button>
+                    <button class="primary-btn" onclick="startTimeRitual()">⏰ 时间起卦</button>
                 </div>
-                <button class="primary-btn" id="shake-btn" onclick="doShake()">🎲 摇一摇</button>
-                <div class="loading" id="shake-loading">
-                    <div class="spinner"></div>
-                    <div>摇卦中...</div>
-                </div>
-                <button class="secondary-btn" style="margin-top:16px;" onclick="goHome()">← 返回</button>
+                <button class="secondary-btn" style="margin-top:16px;" onclick="goToRitualStep1()">← 上一步</button>
             </div>
         </div>
 
-        <div id="result-page" class="page">
+        <div id="ritual-step3" class="page">
             <div class="card">
-                <div class="card-title">象</div>
+                <div class="card-title">起卦 · 第三步</div>
+                <div class="hint" id="ritual-shake-hint">点击下方按钮，开始摇卦</div>
+                <div class="shake-progress" id="ritual-shake-progress">
+                    <div class="shake-step" id="ritual-shake-1">初</div>
+                    <div class="shake-step" id="ritual-shake-2">二</div>
+                    <div class="shake-step" id="ritual-shake-3">三</div>
+                    <div class="shake-step" id="ritual-shake-4">四</div>
+                    <div class="shake-step" id="ritual-shake-5">五</div>
+                    <div class="shake-step" id="ritual-shake-6">上</div>
+                </div>
+                <button class="primary-btn" id="ritual-shake-btn" onclick="doSixShakes()">🎲 开始摇卦</button>
+                <div class="loading" id="ritual-shake-loading">
+                    <div class="spinner"></div>
+                    <div id="ritual-shake-status">摇卦中...</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="ritual-step4" class="page">
+            <div class="card">
+                <div class="card-title">起卦 · 第四步</div>
                 <div class="result-card" style="display:block;">
                     <div class="result-item">
-                        <div class="result-label">本卦</div>
-                        <div id="result-primary-symbol" class="hexagram-symbol"></div>
-                        <div class="result-value primary" id="result-primary">地天泰</div>
+                        <div class="result-label">卦名</div>
+                        <div class="result-value primary" id="ritual-hexagram-name">地天泰</div>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="result-item">
+                        <div class="result-label">六爻图</div>
+                        <div id="ritual-hexagram-symbol" class="hexagram-symbol"></div>
                     </div>
                     <div class="divider"></div>
                     <div class="result-item">
                         <div class="result-label">变爻</div>
-                        <div class="result-value" id="result-changing">第2爻</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">变卦</div>
-                        <div id="result-changed-symbol" class="hexagram-symbol"></div>
-                        <div class="result-value" id="result-changed">地泽临</div>
+                        <div class="result-value" id="ritual-changing-line">第2爻</div>
                     </div>
                 </div>
-                <button class="primary-btn" style="margin-top:14px;" onclick="showInterpretation()">查看解读 →</button>
-                <button class="secondary-btn" style="margin-top:12px;" onclick="goHome()">← 返回</button>
+                <button class="primary-btn" style="margin-top:14px;" onclick="goToRitualStep5()">查看 AI 解读 →</button>
+                <button class="secondary-btn" style="margin-top:12px;" onclick="goHome()">← 返回首页</button>
             </div>
         </div>
 
-        <div id="interpretation-page" class="page">
+        <div id="ritual-step5" class="page">
             <div class="card">
-                <div class="card-title">解</div>
+                <div class="card-title">起卦 · 第五步</div>
                 <div class="result-card" style="display:block;">
                     <div class="result-item">
                         <div class="result-label">Oracle 签语</div>
-                        <div class="result-value fortune" id="inter-oracle">天地交泰，君子以裁成天地之道</div>
+                        <div class="result-value fortune" id="ritual-inter-oracle">天地交泰，君子以裁成天地之道</div>
                     </div>
                     <div class="divider"></div>
                     <div class="result-item">
                         <div class="result-label">当前局势</div>
-                        <div class="result-value" id="inter-current">天地交融，万物生长，这是一个运势亨通的时节。</div>
+                        <div class="result-value" id="ritual-inter-current">天地交融，万物生长，这是一个运势亨通的时节。</div>
                     </div>
                     <div class="result-item">
                         <div class="result-label">卦象含义</div>
-                        <div class="result-value" id="inter-meaning">上坤下乾，地在天上，象征天地交泰、阴阳调和。</div>
+                        <div class="result-value" id="ritual-inter-meaning">上坤下乾，地在天上，象征天地交泰、阴阳调和。</div>
                     </div>
                     <div class="result-item">
                         <div class="result-label">趋势</div>
-                        <div class="result-value" id="inter-trend">若能保持这份和谐，顺势而为，未来会越来越光明。</div>
+                        <div class="result-value" id="ritual-inter-trend">若能保持这份和谐，顺势而为，未来会越来越光明。</div>
                     </div>
                     <div class="result-item">
                         <div class="result-label">建议</div>
-                        <div class="result-value" id="inter-advice">把握机遇，顺势而为；保持谦虚，感恩天地。</div>
+                        <div class="result-value" id="ritual-inter-advice">把握机遇，顺势而为；保持谦虚，感恩天地。</div>
                     </div>
                 </div>
                 <button class="primary-btn" style="margin-top:14px;" onclick="goHome()">🏠 返回首页</button>
