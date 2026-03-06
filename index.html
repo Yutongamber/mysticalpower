@@ -220,12 +220,68 @@
         .divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent); margin: 20px 0; }
         
         /* 卦象符号样式 */
-        .hexagram-symbol { display: flex; flex-direction: column-reverse; align-items: center; gap: 4px; margin: 16px auto; }
-        .hexagram-line { display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .yang-line { width: 60px; height: 8px; background: rgba(255,255,255,0.9); border-radius: 2px; }
-        .yin-line { display: flex; gap: 8px; }
-        .yin-half { width: 26px; height: 8px; background: rgba(255,255,255,0.9); border-radius: 2px; }
-        .hexagram-name { text-align: center; font-size: 24px; color: rgba(102,126,234,0.9); margin-top: 8px; font-weight: 300; letter-spacing: 4px; }
+        .hexagram-symbol { display: flex; flex-direction: column-reverse; align-items: center; gap: 6px; margin: 20px auto; }
+        .hexagram-line { 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 8px; 
+            opacity: 0; 
+            transform: translateY(10px);
+            transition: all 0.4s ease;
+        }
+        .hexagram-line.show { 
+            opacity: 1; 
+            transform: translateY(0);
+        }
+        .yang-line { 
+            width: 70px; 
+            height: 10px; 
+            background: rgba(200, 160, 100, 0.85); 
+            border-radius: 3px;
+            transition: all 0.3s;
+        }
+        .yin-line { display: flex; gap: 10px; }
+        .yin-half { 
+            width: 30px; 
+            height: 10px; 
+            background: rgba(200, 160, 100, 0.85); 
+            border-radius: 3px;
+            transition: all 0.3s;
+        }
+        .hexagram-line.changing .yang-line,
+        .hexagram-line.changing .yin-half {
+            background: rgba(255, 100, 100, 0.9);
+            box-shadow: 0 0 12px rgba(255, 100, 100, 0.5);
+            animation: pulseChanging 1.5s ease-in-out infinite;
+        }
+        @keyframes pulseChanging {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .hexagram-name { 
+            text-align: center; 
+            font-size: 26px; 
+            color: rgba(180, 140, 80, 0.95); 
+            margin-top: 12px; 
+            font-weight: 300; 
+            letter-spacing: 6px;
+        }
+        .hexagram-name-en {
+            text-align: center;
+            font-size: 11px;
+            color: rgba(255,255,255,0.4);
+            margin-top: 4px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+        .changing-label {
+            text-align: center;
+            font-size: 12px;
+            color: rgba(255, 100, 100, 0.8);
+            margin-top: 8px;
+            letter-spacing: 2px;
+        }
         
         /* 摇卦动画 */
         .shake-animation { animation: shake 0.5s ease-in-out infinite; }
@@ -406,12 +462,14 @@
                 <div class="result-card" style="display:block;">
                     <div class="result-item">
                         <div class="result-label">卦名</div>
-                        <div class="result-value primary" id="ritual-hexagram-name">地天泰</div>
+                        <div class="hexagram-name" id="ritual-hexagram-name">地天泰</div>
+                        <div class="hexagram-name-en" id="ritual-hexagram-name-en">Hexagram Name</div>
                     </div>
                     <div class="divider"></div>
                     <div class="result-item">
                         <div class="result-label">六爻图</div>
                         <div id="ritual-hexagram-symbol" class="hexagram-symbol"></div>
+                        <div class="changing-label" id="ritual-changing-label" style="display:none;">变爻高亮</div>
                     </div>
                     <div class="divider"></div>
                     <div class="result-item">
@@ -469,6 +527,20 @@
 
     <script>
         const hexagrams = ['乾为天', '坤为地', '地天泰', '天地否', '水天需', '山水蒙'];
+        const hexagramNamesEn = {
+            '乾为天': 'Qian',
+            '坤为地': 'Kun',
+            '地天泰': 'Tai',
+            '天地否': 'Pi',
+            '水天需': 'Xu',
+            '山水蒙': 'Meng',
+            '天风姤': 'Gou',
+            '地雷复': 'Fu',
+            '地泽临': 'Lin',
+            '天山遁': 'Dun',
+            '水风井': 'Jing',
+            '山地剥': 'Bo'
+        };
         const hexagramSymbols = {
             '乾为天': ['yang', 'yang', 'yang', 'yang', 'yang', 'yang'],
             '坤为地': ['yin', 'yin', 'yin', 'yin', 'yin', 'yin'],
@@ -509,8 +581,8 @@
         function seededRandom(seed) { return function() { seed=(seed*9301+49297)%233280; return seed/233280; }; }
         function getUserId() { let userId = localStorage.getItem('divination_user_id'); if(!userId){ userId='user_'+Math.random().toString(36).substr(2,9); localStorage.setItem('divination_user_id',userId); } return userId; }
 
-        // 生成卦象符号HTML
-        function renderHexagramSymbol(hexagramName, containerId) {
+        // 生成卦象符号HTML（支持变爻高亮）
+        function renderHexagramSymbol(hexagramName, containerId, changingLine = 0, animate = false) {
             const container = document.getElementById(containerId);
             if (!container) return;
             
@@ -518,14 +590,35 @@
             let html = '';
             
             lines.forEach((line, index) => {
+                const lineNum = index + 1;
+                const isChanging = lineNum === changingLine;
+                const changingClass = isChanging ? 'changing' : '';
+                
                 if (line === 'yang') {
-                    html += `<div class="hexagram-line"><div class="yang-line"></div></div>`;
+                    html += `<div class="hexagram-line ${changingClass}" data-line="${lineNum}"><div class="yang-line"></div></div>`;
                 } else {
-                    html += `<div class="hexagram-line"><div class="yin-line"><div class="yin-half"></div><div class="yin-half"></div></div></div>`;
+                    html += `<div class="hexagram-line ${changingClass}" data-line="${lineNum}"><div class="yin-line"><div class="yin-half"></div><div class="yin-half"></div></div></div>`;
                 }
             });
             
             container.innerHTML = html;
+            
+            if (animate) {
+                setTimeout(() => animateHexagramLines(containerId), 100);
+            }
+        }
+        
+        // 爻逐条生成动画
+        function animateHexagramLines(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            const lines = container.querySelectorAll('.hexagram-line');
+            lines.forEach((line, index) => {
+                setTimeout(() => {
+                    line.classList.add('show');
+                }, index * 200);
+            });
         }
 
         // 重置摇卦页面状态
