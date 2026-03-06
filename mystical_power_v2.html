@@ -3,17 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>☯️ 易经占卜</title>
+    <title>Mystical Power - AI Oracle & I Ching</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'PingFang SC', 'Microsoft YaHei', serif; background: linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 30%, #16213e 60%, #0f0f23 100%); min-height: 100vh; padding: 24px; overflow-x: hidden; position: relative; }
-        body::before { content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(circle at 20% 20%, rgba(102,126,234,0.05) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(118,75,162,0.05) 0%, transparent 50%), url('data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><circle cx=\"20\" cy=\"20\" r=\"0.5\" fill=\"white\" opacity=\"0.3\"/><circle cx=\"80\" cy=\"30\" r=\"0.5\" fill=\"white\" opacity=\"0.2\"/><circle cx=\"40\" cy=\"70\" r=\"0.5\" fill=\"white\" opacity=\"0.25\"/><circle cx=\"70\" cy=\"80\" r=\"0.5\" fill=\"white\" opacity=\"0.2\"/><circle cx=\"50\" cy=\"50\" r=\"0.3\" fill=\"white\" opacity=\"0.15\"/></svg>'); pointer-events: none; z-index: 0; }
-        .container { max-width: 460px; margin: 0 auto; position: relative; z-index: 1; }
-        .yinyang { width: 100px; height: 100px; margin: 0 auto 20px; position: relative; }
+        body { 
+            font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Serif SC', serif; 
+            background: linear-gradient(180deg, #050508 0%, #0a0a14 40%, #0d0d1a 100%); 
+            min-height: 100vh; 
+            padding: 20px; 
+            overflow-x: hidden; 
+            position: relative;
+            color: rgba(255,255,255,0.9);
+        }
+        body::before { 
+            content: ''; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            bottom: 0; 
+            background: 
+                radial-gradient(circle at 30% 20%, rgba(139, 90, 43, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 70% 80%, rgba(180, 140, 80, 0.06) 0%, transparent 50%),
+                url('data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><circle cx=\"15\" cy=\"25\" r=\"0.4\" fill=\"white\" opacity=\"0.25\"/><circle cx=\"75\" cy=\"15\" r=\"0.3\" fill=\"white\" opacity=\"0.2\"/><circle cx=\"45\" cy=\"65\" r=\"0.35\" fill=\"white\" opacity=\"0.22\"/><circle cx=\"85\" cy=\"75\" r=\"0.25\" fill=\"white\" opacity=\"0.18\"/><circle cx=\"55\" cy=\"45\" r=\"0.2\" fill=\"white\" opacity=\"0.15\"/></svg>'); 
+            pointer-events: none; 
+            z-index: 0; 
+        }
+        .container { 
+            max-width: 420px; 
+            margin: 0 auto; 
+            position: relative; 
+            z-index: 1; 
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .yinyang { 
+            width: 80px; 
+            height: 80px; 
+            margin: 0 auto 28px; 
+            position: relative;
+            opacity: 0.9;
+        }
         .yinyang svg { width: 100%; height: 100%; }
-        .header { text-align: center; color: rgba(255,255,255,0.9); margin-bottom: 32px; }
-        .header h1 { font-size: 20px; margin-bottom: 8px; font-weight: 300; letter-spacing: 8px; }
-        .header .subtitle { font-size: 12px; opacity: 0.5; letter-spacing: 2px; }
+        .header { 
+            text-align: center; 
+            margin-bottom: 48px;
+        }
+        .header h1 { 
+            font-size: 28px; 
+            font-weight: 300; 
+            letter-spacing: 6px;
+            margin-bottom: 8px;
+            color: rgba(255,255,255,0.95);
+            font-family: 'Noto Serif SC', serif;
+        }
+        .header .subtitle { 
+            font-size: 12px; 
+            opacity: 0.5; 
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+        
+        /* 新首页卡片样式 */
+        .home-card { 
+            background: rgba(255,255,255,0.02); 
+            backdrop-filter: blur(12px); 
+            border-radius: 20px; 
+            padding: 24px 20px; 
+            margin-bottom: 16px; 
+            border: 1px solid rgba(255,255,255,0.05); 
+            position: relative; 
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .home-card::before { 
+            content: ''; 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            height: 1px; 
+            background: linear-gradient(90deg, transparent, rgba(180, 140, 80, 0.35), transparent); 
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+        .home-card:hover { 
+            background: rgba(180, 140, 80, 0.06); 
+            border-color: rgba(180, 140, 80, 0.15); 
+            transform: translateY(-4px);
+        }
+        .home-card:hover::before { opacity: 1; }
+        .home-card-content {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+        .home-card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            background: rgba(180, 140, 80, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+        .home-card-text {
+            flex: 1;
+        }
+        .home-card-title {
+            font-size: 16px;
+            font-weight: 400;
+            color: rgba(255,255,255,0.88);
+            margin-bottom: 4px;
+            letter-spacing: 1px;
+        }
+        .home-card-title-en {
+            font-size: 11px;
+            opacity: 0.4;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .home-card-desc {
+            font-size: 12px;
+            color: rgba(255,255,255,0.45);
+            line-height: 1.6;
+            font-weight: 300;
+        }
+        .home-card-arrow {
+            font-size: 14px;
+            opacity: 0.3;
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        .home-card:hover .home-card-arrow {
+            opacity: 0.7;
+            transform: translateX(4px);
+        }
+        .footer {
+            text-align: center;
+            margin-top: 32px;
+            font-size: 11px;
+            opacity: 0.3;
+            letter-spacing: 2px;
+        }
         .card { background: rgba(255,255,255,0.03); backdrop-filter: blur(16px); border-radius: 24px; padding: 28px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.06); position: relative; overflow: hidden; }
         .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(102,126,234,0.3), transparent); }
         .card-title { font-size: 15px; font-weight: 300; color: rgba(255,255,255,0.75); margin-bottom: 18px; text-align: center; letter-spacing: 4px; }
@@ -52,8 +189,33 @@
         .page { display: none; }
         .page.active { display: block; animation: fadeIn 0.6s ease; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .back-btn { position: fixed; bottom: 24px; right: 24px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 50%; width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.4s; color: rgba(255,255,255,0.7); font-size: 18px; backdrop-filter: blur(10px); }
-        .back-btn:hover { background: rgba(102,126,234,0.15); border-color: rgba(102,126,234,0.35); transform: scale(1.1); }
+        .back-btn { 
+            position: fixed; 
+            top: 20px; 
+            left: 20px; 
+            background: rgba(255,255,255,0.04); 
+            border: 1px solid rgba(255,255,255,0.08); 
+            border-radius: 50%; 
+            width: 44px; 
+            height: 44px; 
+            display: none;
+            align-items: center; 
+            justify-content: center; 
+            cursor: pointer; 
+            transition: all 0.3s; 
+            color: rgba(255,255,255,0.6); 
+            font-size: 16px; 
+            backdrop-filter: blur(10px); 
+            z-index: 100;
+        }
+        .back-btn.show { display: flex; }
+        .back-btn:hover { 
+            background: rgba(180, 140, 80, 0.12); 
+            border-color: rgba(180, 140, 80, 0.25); 
+            transform: scale(1.05); 
+        }
+        .home-btn { position: fixed; bottom: 24px; right: 24px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 50%; width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.4s; color: rgba(255,255,255,0.7); font-size: 18px; backdrop-filter: blur(10px); }
+        .home-btn:hover { background: rgba(102,126,234,0.15); border-color: rgba(102,126,234,0.35); transform: scale(1.1); }
         .hidden { display: none !important; }
         .divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent); margin: 20px 0; }
         
@@ -111,6 +273,47 @@
         </div>
 
         <div id="home-page" class="page active">
+            <div class="home-card" onclick="openDaily()">
+                <div class="home-card-content">
+                    <div class="home-card-icon">☯️</div>
+                    <div class="home-card-text">
+                        <div class="home-card-title">今日签</div>
+                        <div class="home-card-title-en">Daily Oracle</div>
+                        <div class="home-card-desc">每天一支签，洞察今日运势</div>
+                    </div>
+                    <div class="home-card-arrow">→</div>
+                </div>
+            </div>
+
+            <div class="home-card" onclick="openDivination()">
+                <div class="home-card-content">
+                    <div class="home-card-icon">🎲</div>
+                    <div class="home-card-text">
+                        <div class="home-card-title">起一卦</div>
+                        <div class="home-card-title-en">Cast a Hexagram</div>
+                        <div class="home-card-desc">输入问题，AI 为你解读卦象</div>
+                    </div>
+                    <div class="home-card-arrow">→</div>
+                </div>
+            </div>
+
+            <div class="home-card" onclick="openWisdom()">
+                <div class="home-card-content">
+                    <div class="home-card-icon">💬</div>
+                    <div class="home-card-text">
+                        <div class="home-card-title">AI 咨询</div>
+                        <div class="home-card-title-en">AI Wisdom</div>
+                        <div class="home-card-desc">以易经哲学，解答你的困惑</div>
+                    </div>
+                    <div class="home-card-arrow">→</div>
+                </div>
+            </div>
+            
+            <div class="footer">观其象 · 知其意</div>
+        </div>
+
+        <!-- 今日签页面 -->
+        <div id="daily-page" class="page">
             <div class="card">
                 <div class="card-title">今日签</div>
                 <div class="hint" id="daily-hint">点击下方，抽取今日签语</div>
@@ -130,40 +333,26 @@
                     </div>
                 </div>
             </div>
+            <button class="secondary-btn" onclick="openHistory()">📜 历史记录</button>
+        </div>
 
+        <!-- 起卦选择页面 -->
+        <div id="divination-select-page" class="page">
             <div class="card">
                 <div class="card-title">起一卦</div>
-                <div class="hint">心诚则灵，问一问题</div>
-                <div class="action-grid">
-                    <div class="action-btn" onclick="startDivination()">
-                        <span class="emoji">🎲</span>
-                        <span class="text">铜钱起卦</span>
-                        <span class="subtext">三枚铜钱</span>
-                    </div>
-                    <div class="action-btn" onclick="startTimeDivination()">
-                        <span class="emoji">⏰</span>
-                        <span class="text">时间起卦</span>
-                        <span class="subtext">此时此刻</span>
-                    </div>
+                <div class="hint">请输入你想问的问题</div>
+                <textarea class="text-input" id="divination-question-new" rows="3" placeholder="例如：我的事业最近会有什么发展？"></textarea>
+            </div>
+            
+            <div class="card" style="padding:16px 20px;">
+                <div class="hint" style="margin-bottom:12px;">选择起卦方式</div>
+                <div style="display:flex; gap:12px;">
+                    <button class="primary-btn" style="flex:1; margin-top:0;" onclick="startCoinDivinationNew()">🎲 铜钱</button>
+                    <button class="primary-btn" style="flex:1; margin-top:0;" onclick="startTimeDivinationNew()">⏰ 时间</button>
                 </div>
             </div>
-
-            <div class="card">
-                <div class="card-title">其他</div>
-                <div class="hint">更多功能</div>
-                <div class="action-grid">
-                    <div class="action-btn" onclick="startEmotion()">
-                        <span class="emoji">💭</span>
-                        <span class="text">倾诉</span>
-                        <span class="subtext">心情树洞</span>
-                    </div>
-                    <div class="action-btn" onclick="showHistory()">
-                        <span class="emoji">📜</span>
-                        <span class="text">历史记录</span>
-                        <span class="subtext">过往卦象</span>
-                    </div>
-                </div>
-            </div>
+            
+            <button class="secondary-btn" onclick="openHistory()">📜 历史记录</button>
         </div>
 
         <div id="divination-page" class="page">
@@ -259,7 +448,8 @@
             </div>
         </div>
 
-        <div class="back-btn" onclick="goHome()" id="home-btn">☯️</div>
+        <div class="back-btn" id="back-btn" onclick="goHome()">←</div>
+        <div class="home-btn" onclick="goHome()" id="home-btn" style="display:none;">☯️</div>
     </div>
 
     <script>
@@ -338,6 +528,55 @@
             document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
             document.getElementById('home-btn').style.display = pageId==='home-page' ? 'none' : 'flex';
+            document.getElementById('back-btn').classList.toggle('show', pageId !== 'home-page');
+        }
+
+        function openDaily() {
+            showPage('daily-page');
+        }
+
+        function openDivination() {
+            document.getElementById('divination-question-new').value = '';
+            showPage('divination-select-page');
+        }
+
+        function openWisdom() {
+            alert('AI 咨询功能开发中...\n\n敬请期待！');
+        }
+
+        function startCoinDivinationNew() {
+            const q = document.getElementById('divination-question-new').value;
+            if(!q.trim()){ alert('请输入问题'); return; }
+            currentQuestion = q;
+            isTimeDivination = false;
+            document.getElementById('divination-question').value = q;
+            resetShakePage();
+            showPage('shake-page');
+        }
+
+        function startTimeDivinationNew() {
+            const q = document.getElementById('divination-question-new').value;
+            currentQuestion = q || '时间起卦';
+            isTimeDivination = true;
+            document.getElementById('divination-question').value = q;
+            
+            const now=new Date();
+            const timeStr=now.toLocaleString('zh-CN');
+            const seed=Math.abs(hashCode(timeStr + (q || '')));
+            const random=seededRandom(seed);
+            const pi=Math.floor(random()*hexagrams.length);
+            resultPrimary=hexagrams[pi];
+            resultChanging=Math.floor(random()*6)+1;
+            resultChanged=changedHexagramMap[resultPrimary]||resultPrimary;
+            
+            renderHexagramSymbol(resultPrimary, 'result-primary-symbol');
+            renderHexagramSymbol(resultChanged, 'result-changed-symbol');
+            document.getElementById('result-primary').textContent=resultPrimary;
+            document.getElementById('result-changing').textContent='第'+resultChanging+'爻';
+            document.getElementById('result-changed').textContent=resultChanged;
+            
+            saveToHistory(currentQuestion, resultPrimary, resultChanged, resultChanging);
+            showPage('result-page');
         }
 
         function goHome() {
