@@ -461,7 +461,20 @@
                         <div class="result-value" id="inter-advice">把握机遇，顺势而为；保持谦虚，感恩天地。</div>
                     </div>
                 </div>
-                <button class="primary-btn" style="margin-top:14px;" onclick="goHome()">🏠 返回首页</button>
+                
+                <div class="divider" style="margin:24px 0;"></div>
+                
+                <div class="result-item">
+                    <div class="result-label" id="chat-round-label">继续提问 (0/10)</div>
+                </div>
+                <div class="chat-container" id="chat-container" style="max-height:200px; overflow-y:auto; margin:12px 0; padding:10px; background:rgba(255,255,255,0.02); border-radius:12px;">
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <textarea class="text-input" id="chat-input" rows="2" placeholder="继续提问，围绕此卦深入探讨..." style="flex:1; margin-top:0; resize:none;"></textarea>
+                    <button class="primary-btn" id="send-chat-btn" style="width:auto; padding:12px 20px; margin-top:0;" onclick="sendChatMessage()">发送</button>
+                </div>
+                
+                <button class="secondary-btn" style="margin-top:16px;" onclick="goHome()">🏠 返回首页</button>
             </div>
         </div>
 
@@ -630,6 +643,9 @@
         let resultChanging = 0;
         let resultChanged = '';
         let isTimeDivination = false;
+        let chatHistory = [];
+        let chatRound = 0;
+        const MAX_CHAT_ROUNDS = 10;
 
         function hashCode(str) { let hash=0; for(let i=0;i<str.length;i++){ const char=str.charCodeAt(i); hash=((hash<<5)-hash)+char; hash=hash&hash; } return hash; }
         function seededRandom(seed) { return function() { seed=(seed*9301+49297)%233280; return seed/233280; }; }
@@ -819,7 +835,93 @@
             document.getElementById('inter-trend').textContent=data.trend;
             document.getElementById('inter-advice').textContent=data.advice;
             
+            // 重置聊天状态
+            chatHistory = [];
+            chatRound = 0;
+            updateChatRoundLabel();
+            document.getElementById('chat-container').innerHTML = '';
+            document.getElementById('chat-input').value = '';
+            document.getElementById('chat-input').placeholder = '继续提问，围绕此卦深入探讨...';
+            document.getElementById('send-chat-btn').disabled = false;
+            
             showPage('interpretation-page');
+        }
+
+        function updateChatRoundLabel() {
+            document.getElementById('chat-round-label').textContent = `继续提问 (${chatRound}/${MAX_CHAT_ROUNDS})`;
+        }
+
+        function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const userMessage = input.value.trim();
+            
+            if (!userMessage) return;
+            if (chatRound >= MAX_CHAT_ROUNDS) {
+                addChatMessage('system', '已达到最大对话轮数（10轮），请重新起卦。');
+                document.getElementById('send-chat-btn').disabled = true;
+                input.value = '';
+                return;
+            }
+            
+            // 添加用户消息
+            addChatMessage('user', userMessage);
+            input.value = '';
+            chatRound++;
+            updateChatRoundLabel();
+            
+            // 生成AI回复
+            setTimeout(() => {
+                const aiResponse = generateAIResponse(userMessage);
+                addChatMessage('ai', aiResponse);
+                chatHistory.push({
+                    user: userMessage,
+                    ai: aiResponse
+                });
+            }, 500);
+        }
+
+        function addChatMessage(type, message) {
+            const container = document.getElementById('chat-container');
+            const messageDiv = document.createElement('div');
+            messageDiv.style.marginBottom = '12px';
+            messageDiv.style.padding = '10px 14px';
+            messageDiv.style.borderRadius = '10px';
+            messageDiv.style.fontSize = '13px';
+            messageDiv.style.lineHeight = '1.6';
+            
+            if (type === 'user') {
+                messageDiv.style.background = 'rgba(180, 140, 80, 0.12)';
+                messageDiv.style.border = '1px solid rgba(180, 140, 80, 0.15)';
+                messageDiv.style.marginLeft = '40px';
+                messageDiv.innerHTML = `<div style="color: rgba(200, 160, 100, 0.9);">${escapeHtml(message)}</div>`;
+            } else if (type === 'ai') {
+                messageDiv.style.background = 'rgba(255,255,255,0.02)';
+                messageDiv.style.border = '1px solid rgba(255,255,255,0.05)';
+                messageDiv.style.marginRight = '40px';
+                messageDiv.innerHTML = `<div style="color: rgba(255,255,255,0.85);">${escapeHtml(message)}</div>`;
+            } else {
+                messageDiv.style.textAlign = 'center';
+                messageDiv.style.color = 'rgba(255,255,255,0.6)';
+                messageDiv.innerHTML = `<div style="font-style: italic;">${escapeHtml(message)}</div>`;
+            }
+            
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function generateAIResponse(userQuestion) {
+            const data = hexagramDb[resultPrimary] || hexagramDb['乾为天'];
+            const changingLineText = resultChanging > 0 ? `第${resultChanging}爻变化` : '无变爻';
+            
+            const responses = [
+                `根据${resultPrimary}卦${changingLineText}，${userQuestion}这个问题可以从${data.meaning}的角度来思考。`,
+                `结合此卦的含义，${userQuestion}需要注意${data.advice}。`,
+                `从${resultPrimary}卦的趋势来看，${data.trend}对于${userQuestion}是一个重要的启示。`,
+                `${data.current}，这对于${userQuestion}有直接的指导意义。建议${data.advice}。`,
+                `基于${resultPrimary}卦${changingLineText}，${userQuestion}可以参考${data.oracle}的智慧来处理。`
+            ];
+            
+            return responses[Math.floor(Math.random() * responses.length)];
         }
 
         // 历史记录功能
