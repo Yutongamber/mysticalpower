@@ -151,6 +151,42 @@
             opacity: 0.3;
             letter-spacing: 2px;
         }
+        
+        /* 六次摇卦进度样式 */
+        .shake-progress {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin: 24px 0;
+        }
+        .shake-step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: rgba(255,255,255,0.4);
+            transition: all 0.3s;
+        }
+        .shake-step.active {
+            background: rgba(180, 140, 80, 0.2);
+            border-color: rgba(180, 140, 80, 0.5);
+            color: rgba(200, 160, 100, 0.9);
+            animation: pulse 0.5s ease-in-out;
+        }
+        .shake-step.completed {
+            background: rgba(180, 140, 80, 0.15);
+            border-color: rgba(180, 140, 80, 0.4);
+            color: rgba(200, 160, 100, 0.8);
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
         .card { background: rgba(255,255,255,0.03); backdrop-filter: blur(16px); border-radius: 24px; padding: 28px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.06); position: relative; overflow: hidden; }
         .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(102,126,234,0.3), transparent); }
         .card-title { font-size: 15px; font-weight: 300; color: rgba(255,255,255,0.75); margin-bottom: 18px; text-align: center; letter-spacing: 4px; }
@@ -220,68 +256,12 @@
         .divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent); margin: 20px 0; }
         
         /* 卦象符号样式 */
-        .hexagram-symbol { display: flex; flex-direction: column-reverse; align-items: center; gap: 6px; margin: 20px auto; }
-        .hexagram-line { 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            gap: 8px; 
-            opacity: 0; 
-            transform: translateY(10px);
-            transition: all 0.4s ease;
-        }
-        .hexagram-line.show { 
-            opacity: 1; 
-            transform: translateY(0);
-        }
-        .yang-line { 
-            width: 70px; 
-            height: 10px; 
-            background: rgba(200, 160, 100, 0.85); 
-            border-radius: 3px;
-            transition: all 0.3s;
-        }
-        .yin-line { display: flex; gap: 10px; }
-        .yin-half { 
-            width: 30px; 
-            height: 10px; 
-            background: rgba(200, 160, 100, 0.85); 
-            border-radius: 3px;
-            transition: all 0.3s;
-        }
-        .hexagram-line.changing .yang-line,
-        .hexagram-line.changing .yin-half {
-            background: rgba(255, 100, 100, 0.9);
-            box-shadow: 0 0 12px rgba(255, 100, 100, 0.5);
-            animation: pulseChanging 1.5s ease-in-out infinite;
-        }
-        @keyframes pulseChanging {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-        .hexagram-name { 
-            text-align: center; 
-            font-size: 26px; 
-            color: rgba(180, 140, 80, 0.95); 
-            margin-top: 12px; 
-            font-weight: 300; 
-            letter-spacing: 6px;
-        }
-        .hexagram-name-en {
-            text-align: center;
-            font-size: 11px;
-            color: rgba(255,255,255,0.4);
-            margin-top: 4px;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-        }
-        .changing-label {
-            text-align: center;
-            font-size: 12px;
-            color: rgba(255, 100, 100, 0.8);
-            margin-top: 8px;
-            letter-spacing: 2px;
-        }
+        .hexagram-symbol { display: flex; flex-direction: column-reverse; align-items: center; gap: 4px; margin: 16px auto; }
+        .hexagram-line { display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .yang-line { width: 60px; height: 8px; background: rgba(255,255,255,0.9); border-radius: 2px; }
+        .yin-line { display: flex; gap: 8px; }
+        .yin-half { width: 26px; height: 8px; background: rgba(255,255,255,0.9); border-radius: 2px; }
+        .hexagram-name { text-align: center; font-size: 24px; color: rgba(102,126,234,0.9); margin-top: 8px; font-weight: 300; letter-spacing: 4px; }
         
         /* 摇卦动画 */
         .shake-animation { animation: shake 0.5s ease-in-out infinite; }
@@ -341,7 +321,7 @@
                 </div>
             </div>
 
-            <div class="home-card" onclick="startDivinationRitual()">
+            <div class="home-card" onclick="openDivination()">
                 <div class="home-card-content">
                     <div class="home-card-icon">🎲</div>
                     <div class="home-card-text">
@@ -411,104 +391,84 @@
             <button class="secondary-btn" onclick="openHistory()">📜 历史记录</button>
         </div>
 
-        <div id="ritual-step1" class="page">
+        <div id="divination-page" class="page">
             <div class="card">
-                <div class="card-title">起卦 · 第一步</div>
-                <div class="hint">
-                    请安静片刻<br>
-                    <span style="opacity:0.7;">在心中默念你的问题</span>
-                </div>
-                <textarea class="text-input" id="ritual-question" rows="4" placeholder="例如：我的事业最近会有什么发展？"></textarea>
-                <button class="primary-btn" onclick="goToRitualStep2()">下一步 →</button>
+                <div class="card-title">问</div>
+                <div class="hint">请在心中默念你的问题<br><span style="opacity:0.5; font-size:12px;">然后在下方输入</span></div>
+                <textarea class="text-input" id="divination-question" rows="4" placeholder="例如：我的事业最近会有什么发展？"></textarea>
+                <div style="display:none;" id="time-divination-hint" class="hint" style="margin-top:12px;">时间起卦也可以输入问题哦～</div>
+                <button class="primary-btn" onclick="nextStep(2)">下一步 →</button>
                 <button class="secondary-btn" style="margin-top:12px;" onclick="goHome()">← 返回</button>
             </div>
         </div>
 
-        <div id="ritual-step2" class="page">
+        <div id="shake-page" class="page">
             <div class="card">
-                <div class="card-title">起卦 · 第二步</div>
-                <div class="hint">选择起卦方式</div>
-                <div style="display:flex; flex-direction:column; gap:12px;">
-                    <button class="primary-btn" onclick="startCoinRitual()">🎲 铜钱起卦</button>
-                    <button class="primary-btn" onclick="startTimeRitual()">⏰ 时间起卦</button>
+                <div class="card-title">摇</div>
+                <div class="hint">点击下方按钮，开始摇卦</div>
+                <div class="coins-container" id="coins-container">
+                    <div class="coin" id="coin1">◯</div>
+                    <div class="coin" id="coin2">◯</div>
+                    <div class="coin" id="coin3">◯</div>
                 </div>
-                <button class="secondary-btn" style="margin-top:16px;" onclick="goToRitualStep1()">← 上一步</button>
-            </div>
-        </div>
-
-        <div id="ritual-step3" class="page">
-            <div class="card">
-                <div class="card-title">起卦 · 第三步</div>
-                <div class="hint" id="ritual-shake-hint">点击下方按钮，开始摇卦</div>
-                <div class="shake-progress" id="ritual-shake-progress">
-                    <div class="shake-step" id="ritual-shake-1">初</div>
-                    <div class="shake-step" id="ritual-shake-2">二</div>
-                    <div class="shake-step" id="ritual-shake-3">三</div>
-                    <div class="shake-step" id="ritual-shake-4">四</div>
-                    <div class="shake-step" id="ritual-shake-5">五</div>
-                    <div class="shake-step" id="ritual-shake-6">上</div>
-                </div>
-                <button class="primary-btn" id="ritual-shake-btn" onclick="doSixShakes()">🎲 开始摇卦</button>
-                <div class="loading" id="ritual-shake-loading">
+                <button class="primary-btn" id="shake-btn" onclick="doShake()">🎲 摇一摇</button>
+                <div class="loading" id="shake-loading">
                     <div class="spinner"></div>
-                    <div id="ritual-shake-status">摇卦中...</div>
+                    <div>摇卦中...</div>
                 </div>
+                <button class="secondary-btn" style="margin-top:16px;" onclick="goHome()">← 返回</button>
             </div>
         </div>
 
-        <div id="ritual-step4" class="page">
+        <div id="result-page" class="page">
             <div class="card">
-                <div class="card-title">起卦 · 第四步</div>
+                <div class="card-title">象</div>
                 <div class="result-card" style="display:block;">
                     <div class="result-item">
-                        <div class="result-label">卦名</div>
-                        <div class="hexagram-name" id="ritual-hexagram-name">地天泰</div>
-                        <div class="hexagram-name-en" id="ritual-hexagram-name-en">Hexagram Name</div>
-                    </div>
-                    <div class="divider"></div>
-                    <div class="result-item">
-                        <div class="result-label">六爻图</div>
-                        <div id="ritual-hexagram-symbol" class="hexagram-symbol"></div>
-                        <div class="changing-label" id="ritual-changing-label" style="display:none;">变爻高亮</div>
+                        <div class="result-label">本卦</div>
+                        <div id="result-primary-symbol" class="hexagram-symbol"></div>
+                        <div class="result-value primary" id="result-primary">地天泰</div>
                     </div>
                     <div class="divider"></div>
                     <div class="result-item">
                         <div class="result-label">变爻</div>
-                        <div class="result-value" id="ritual-changing-line">第2爻</div>
+                        <div class="result-value" id="result-changing">第2爻</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">变卦</div>
+                        <div id="result-changed-symbol" class="hexagram-symbol"></div>
+                        <div class="result-value" id="result-changed">地泽临</div>
                     </div>
                 </div>
-                <button class="primary-btn" style="margin-top:14px;" onclick="goToRitualStep5()">查看 AI 解读 →</button>
-                <button class="secondary-btn" style="margin-top:12px;" onclick="goHome()">← 返回首页</button>
+                <button class="primary-btn" style="margin-top:14px;" onclick="showInterpretation()">查看解读 →</button>
+                <button class="secondary-btn" style="margin-top:12px;" onclick="goHome()">← 返回</button>
             </div>
         </div>
 
-        <div id="ritual-step5" class="page">
+        <div id="interpretation-page" class="page">
             <div class="card">
-                <div class="card-title">AI 解读</div>
+                <div class="card-title">解</div>
                 <div class="result-card" style="display:block;">
                     <div class="result-item">
-                        <div class="result-label">1. Oracle 签语</div>
-                        <div class="result-value fortune" id="ritual-inter-oracle">天地交泰，君子以裁成天地之道</div>
+                        <div class="result-label">Oracle 签语</div>
+                        <div class="result-value fortune" id="inter-oracle">天地交泰，君子以裁成天地之道</div>
                     </div>
                     <div class="divider"></div>
                     <div class="result-item">
-                        <div class="result-label">2. 卦象含义</div>
-                        <div class="result-value" id="ritual-inter-meaning">上坤下乾，地在天上，象征天地交泰、阴阳调和。</div>
+                        <div class="result-label">当前局势</div>
+                        <div class="result-value" id="inter-current">天地交融，万物生长，这是一个运势亨通的时节。</div>
                     </div>
-                    <div class="divider"></div>
                     <div class="result-item">
-                        <div class="result-label">3. 当前处境</div>
-                        <div class="result-value" id="ritual-inter-situation">天地交融，万物生长，这是一个运势亨通的时节。</div>
+                        <div class="result-label">卦象含义</div>
+                        <div class="result-value" id="inter-meaning">上坤下乾，地在天上，象征天地交泰、阴阳调和。</div>
                     </div>
-                    <div class="divider"></div>
                     <div class="result-item">
-                        <div class="result-label">4. 趋势</div>
-                        <div class="result-value" id="ritual-inter-trend">若能保持这份和谐，顺势而为，未来会越来越光明。</div>
+                        <div class="result-label">趋势</div>
+                        <div class="result-value" id="inter-trend">若能保持这份和谐，顺势而为，未来会越来越光明。</div>
                     </div>
-                    <div class="divider"></div>
                     <div class="result-item">
-                        <div class="result-label">5. 行动建议</div>
-                        <div class="result-value" id="ritual-inter-advice">把握机遇，顺势而为；保持谦虚，感恩天地。</div>
+                        <div class="result-label">建议</div>
+                        <div class="result-value" id="inter-advice">把握机遇，顺势而为；保持谦虚，感恩天地。</div>
                     </div>
                 </div>
                 <button class="primary-btn" style="margin-top:14px;" onclick="goHome()">🏠 返回首页</button>
@@ -530,20 +490,6 @@
 
     <script>
         const hexagrams = ['乾为天', '坤为地', '地天泰', '天地否', '水天需', '山水蒙'];
-        const hexagramNamesEn = {
-            '乾为天': 'Qian',
-            '坤为地': 'Kun',
-            '地天泰': 'Tai',
-            '天地否': 'Pi',
-            '水天需': 'Xu',
-            '山水蒙': 'Meng',
-            '天风姤': 'Gou',
-            '地雷复': 'Fu',
-            '地泽临': 'Lin',
-            '天山遁': 'Dun',
-            '水风井': 'Jing',
-            '山地剥': 'Bo'
-        };
         const hexagramSymbols = {
             '乾为天': ['yang', 'yang', 'yang', 'yang', 'yang', 'yang'],
             '坤为地': ['yin', 'yin', 'yin', 'yin', 'yin', 'yin'],
@@ -558,84 +504,18 @@
             '水风井': ['yin', 'yang', 'yang', 'yang', 'yin', 'yang'],
             '山地剥': ['yin', 'yin', 'yin', 'yin', 'yin', 'yang']
         };
-                const hexagramDb = {
-            '乾为天': { 
-                oracle:'天行健，君子以自强不息',
-                meaning:'乾卦象天，六爻皆阳，如日中天，象征刚健进取、生生不息。',
-                situation:'你当下充满动力，如太阳初升，万物复苏，是积极进取的好时机。',
-                trend:'若能保持这份进取心，如天体运行般永不停息，未来的道路会越来越宽广。',
-                advice:'保持积极的心态，像天一样刚健有力；同时保持谦虚，满招损谦受益。'
-            },
-            '坤为地': { 
-                oracle:'地势坤，君子以厚德载物',
-                meaning:'坤卦象地，六爻皆阴，如大地宽厚，象征包容稳定、润物无声。',
-                situation:'你需要像大地一样，学会包容和承载，这是一个打基础、练内功的时期。',
-                trend:'若能像大地一样稳重踏实，不疾不徐，未来会打下坚实的根基。',
-                advice:'保持稳重，学会倾听；像大地包容万物一样，多关心身边的人，打好基础。'
-            },
-            '地天泰': { 
-                oracle:'天地交泰，君子以裁成天地之道',
-                meaning:'上坤下乾，地在天上，象征天地交泰、阴阳调和，是吉祥亨通之象。',
-                situation:'天地交融，万物生长，你的处境如春天般充满生机，运势亨通。',
-                trend:'若能保持这份和谐，顺势而为，未来的道路会越来越光明，越来越顺畅。',
-                advice:'把握机遇，顺势而为；保持谦虚，感恩天地，感恩身边的每一个人。'
-            },
-            '天地否': { 
-                oracle:'天地不交，君子以俭德辟难',
-                meaning:'上乾下坤，天在地上，象征天地不交、闭塞不通，需要退守和等待。',
-                situation:'天地闭塞，阴阳不交，有些事情可能不太顺畅，这是一个需要韬光养晦的时期。',
-                trend:'若能韬光养晦，保存实力，等待时机，未来会有转机。否极泰来，这是自然的道理。',
-                advice:'韬光养晦，保存实力；不要冒险，充实自己，为未来的转机做好准备。'
-            },
-            '水天需': { 
-                oracle:'云上于天，君子以饮食宴乐',
-                meaning:'上坎下乾，水在天上，象征等待降雨、时机未到，需要耐心等待。',
-                situation:'云在天上，等待降雨，你正处于等待时机的阶段，需要一些耐心和准备。',
-                trend:'若能耐心等待，做好准备，时机成熟时，一切自然水到渠成，如甘霖降世。',
-                advice:'耐心等待，做好准备；不要急躁，保持乐观心态，像等待春雨一样，时机到了自然到来。'
-            },
-            '山水蒙': { 
-                oracle:'山下出泉，君子以果行育德',
-                meaning:'上艮下坎，山在水上，象征蒙昧待启、需要学习引导，如泉水初涌。',
-                situation:'山下有泉，蒙昧待启，你正处于学习探索的阶段，保持好奇心和求知欲。',
-                trend:'若能保持谦虚学习，像泉水一样不断涌出，未来会越来越明朗，越来越清晰。',
-                advice:'保持谦虚，主动请教；不要不懂装懂，循序渐进，像山泉一样，细水长流。'
-            },
-            '天风姤': { 
-                oracle:'天下有风，姤；后以施命诰四方',
-                meaning:'上乾下巽，天下有风，象征遇合、邂逅，需要把握机遇。',
-                situation:'风吹天下，遇合之时，你可能会遇到新的机缘或人物，保持开放心态。',
-                trend:'若能主动把握机缘，像风吹万物一样积极行动，未来会有新的发展。',
-                advice:'保持开放心态，主动与人交流；把握偶遇的机缘，可能带来意外收获。'
-            },
-            '地雷复': { 
-                oracle:'雷在地中，复；先王以至日闭关',
-                meaning:'上坤下震，雷在地中，象征阳气回复、万物复苏，是重生之象。',
-                situation:'阳气回复，万物复苏，这是一个重生和恢复的时期，把握复苏的时机。',
-                trend:'若能顺应时机，像春雷唤醒万物一样积极行动，未来会越来越好。',
-                advice:'把握复苏的时机，积极行动；保持乐观，相信否极泰来。'
-            },
-            '地泽临': { 
-                oracle:'泽上有地，临；君子以教思无穷',
-                meaning:'上坤下兑，泽上有地，象征居高临下、恩泽四方，需要包容和教导。',
-                situation:'居高临下，泽被万物，你处于有利位置，可以帮助他人，以身作则。',
-                trend:'若能以包容之心对待他人，像大地容纳湖泽一样，未来会更顺利。',
-                advice:'保持谦虚，多帮助他人；以身作则，用行动影响身边的人。'
-            },
-            '水风井': { 
-                oracle:'木上有水，井；君子以劳民劝相',
-                meaning:'上坎下巽，木上有水，象征井水养人、源源不断，需要持续积累。',
-                situation:'井水养人，源源不断，你正处于持续积累和奉献的阶段，不断学习。',
-                trend:'若能持续积累，像井水一样不断涌出，未来会越来越富足。',
-                advice:'持续学习，不断积累；像井水养人一样，多为他人着想。'
-            },
-            '山地剥': { 
-                oracle:'山附于地，剥；上以厚下安宅',
-                meaning:'上艮下坤，山附于地，象征剥落、衰退，需要退守和等待。',
-                situation:'山崩地裂，剥落之时，这是一个需要退守和保存实力的时期。',
-                trend:'若能保存实力，像山依附于地一样稳重，未来会有转机。',
-                advice:'韬光养晦，保存实力；不要冒险，等待更好的时机。'
-            }
+        const hexagramDb = {
+            '乾为天': { oracle:'天行健，君子以自强不息', current:'你心中充满力量，如太阳初升，万物复苏。', meaning:'乾卦象天，六爻皆阳，如日中天，象征刚健进取。', trend:'若能保持这份进取心，如天体运行般永不停息，未来会越来越宽广。', advice:'保持积极的心态，像天一样刚健有力；同时保持谦虚，满招损谦受益。' },
+            '坤为地': { oracle:'地势坤，君子以厚德载物', current:'你需要像大地一样，学会包容和承载。这是一个打基础的时期。', meaning:'坤卦象地，六爻皆阴，如大地宽厚，象征包容稳定。', trend:'若能像大地一样稳重踏实，不疾不徐，未来会打下坚实的根基。', advice:'保持稳重，学会倾听；像大地包容万物一样，多关心身边的人，打好基础。' },
+            '地天泰': { oracle:'天地交泰，君子以裁成天地之道', current:'天地交融，万物生长，这是一个运势亨通的时节。你的处境如春天般充满生机。', meaning:'上坤下乾，地在天上，象征天地交泰、阴阳调和，是吉祥亨通之象。', trend:'若能保持这份和谐，顺势而为，未来的道路会越来越光明，越来越顺畅。', advice:'把握机遇，顺势而为；保持谦虚，感恩天地，感恩身边的每一个人。' },
+            '天地否': { oracle:'天地不交，君子以俭德辟难', current:'天地闭塞，阴阳不交，这是一个需要韬光养晦的时期。有些事情可能不太顺畅。', meaning:'上乾下坤，天在地上，象征天地不交、闭塞不通，需要退守和等待。', trend:'若能韬光养晦，保存实力，等待时机，未来会有转机。否极泰来，这是自然的道理。', advice:'韬光养晦，保存实力；不要冒险，充实自己，为未来的转机做好准备。' },
+            '水天需': { oracle:'云上于天，君子以饮食宴乐', current:'云在天上，等待降雨。你正处于等待时机的阶段，需要一些耐心和准备。', meaning:'上坎下乾，水在天上，象征等待降雨、时机未到，需要耐心等待。', trend:'若能耐心等待，做好准备，时机成熟时，一切自然水到渠成，如甘霖降世。', advice:'耐心等待，做好准备；不要急躁，保持乐观心态，像等待春雨一样，时机到了自然到来。' },
+            '山水蒙': { oracle:'山下出泉，君子以果行育德', current:'山下有泉，蒙昧待启。你正处于学习探索的阶段，保持好奇心和求知欲。', meaning:'上艮下坎，山在水上，象征蒙昧待启、需要学习引导，如泉水初涌。', trend:'若能保持谦虚学习，像泉水一样不断涌出，未来会越来越明朗，越来越清晰。', advice:'保持谦虚，主动请教；不要不懂装懂，循序渐进，像山泉一样，细水长流。' },
+            '天风姤': { oracle:'天下有风，姤；后以施命诰四方', current:'风吹天下，遇合之时。你可能会遇到新的机缘或人物。', meaning:'上乾下巽，天下有风，象征遇合、邂逅，需要把握机遇。', trend:'若能主动把握机缘，像风吹万物一样积极行动，未来会有新的发展。', advice:'保持开放心态，主动与人交流；把握偶遇的机缘，可能带来意外收获。' },
+            '地雷复': { oracle:'雷在地中，复；先王以至日闭关', current:'阳气回复，万物复苏。这是一个重生和恢复的时期。', meaning:'上坤下震，雷在地中，象征阳气回复、万物复苏，是重生之象。', trend:'若能顺应时机，像春雷唤醒万物一样积极行动，未来会越来越好。', advice:'把握复苏的时机，积极行动；保持乐观，相信否极泰来。' },
+            '地泽临': { oracle:'泽上有地，临；君子以教思无穷', current:'居高临下，泽被万物。你处于有利位置，可以帮助他人。', meaning:'上坤下兑，泽上有地，象征居高临下、恩泽四方，需要包容和教导。', trend:'若能以包容之心对待他人，像大地容纳湖泽一样，未来会更顺利。', advice:'保持谦虚，多帮助他人；以身作则，用行动影响身边的人。' },
+            '水风井': { oracle:'木上有水，井；君子以劳民劝相', current:'井水养人，源源不断。你正处于持续积累和奉献的阶段。', meaning:'上坎下巽，木上有水，象征井水养人、源源不断，需要持续积累。', trend:'若能持续积累，像井水一样不断涌出，未来会越来越富足。', advice:'持续学习，不断积累；像井水养人一样，多为他人着想。' },
+            '山地剥': { oracle:'山附于地，剥；上以厚下安宅', current:'山崩地裂，剥落之时。这是一个需要退守和保存实力的时期。', meaning:'上艮下坤，山附于地，象征剥落、衰退，需要退守和等待。', trend:'若能保存实力，像山依附于地一样稳重，未来会有转机。', advice:'韬光养晦，保存实力；不要冒险，等待更好的时机。' }
         };
         const changedHexagramMap = { '乾为天':'天风姤','坤为地':'地雷复','地天泰':'地泽临','天地否':'天地否','水天需':'水风井','山水蒙':'山地剥' };
         const fortunePhrases = ['天行健，君子以自强不息','地势坤，君子以厚德载物','天地交泰，君子以裁成天地之道','天地不交，君子以俭德辟难','云上于天，君子以饮食宴乐','山下出泉，君子以果行育德'];
@@ -650,8 +530,8 @@
         function seededRandom(seed) { return function() { seed=(seed*9301+49297)%233280; return seed/233280; }; }
         function getUserId() { let userId = localStorage.getItem('divination_user_id'); if(!userId){ userId='user_'+Math.random().toString(36).substr(2,9); localStorage.setItem('divination_user_id',userId); } return userId; }
 
-        // 生成卦象符号HTML（支持变爻高亮）
-        function renderHexagramSymbol(hexagramName, containerId, changingLine = 0, animate = false) {
+        // 生成卦象符号HTML
+        function renderHexagramSymbol(hexagramName, containerId) {
             const container = document.getElementById(containerId);
             if (!container) return;
             
@@ -659,35 +539,14 @@
             let html = '';
             
             lines.forEach((line, index) => {
-                const lineNum = index + 1;
-                const isChanging = lineNum === changingLine;
-                const changingClass = isChanging ? 'changing' : '';
-                
                 if (line === 'yang') {
-                    html += `<div class="hexagram-line ${changingClass}" data-line="${lineNum}"><div class="yang-line"></div></div>`;
+                    html += `<div class="hexagram-line"><div class="yang-line"></div></div>`;
                 } else {
-                    html += `<div class="hexagram-line ${changingClass}" data-line="${lineNum}"><div class="yin-line"><div class="yin-half"></div><div class="yin-half"></div></div></div>`;
+                    html += `<div class="hexagram-line"><div class="yin-line"><div class="yin-half"></div><div class="yin-half"></div></div></div>`;
                 }
             });
             
             container.innerHTML = html;
-            
-            if (animate) {
-                setTimeout(() => animateHexagramLines(containerId), 100);
-            }
-        }
-        
-        // 爻逐条生成动画
-        function animateHexagramLines(containerId) {
-            const container = document.getElementById(containerId);
-            if (!container) return;
-            
-            const lines = container.querySelectorAll('.hexagram-line');
-            lines.forEach((line, index) => {
-                setTimeout(() => {
-                    line.classList.add('show');
-                }, index * 200);
-            });
         }
 
         // 重置摇卦页面状态
@@ -887,16 +746,6 @@
             document.getElementById('inter-advice').textContent=data.advice;
             
             showPage('interpretation-page');
-        }
-
-        function goToRitualStep5() {
-            const data=hexagramDb[resultPrimary];
-            document.getElementById('ritual-inter-oracle').textContent=data.oracle;
-            document.getElementById('ritual-inter-meaning').textContent=data.meaning;
-            document.getElementById('ritual-inter-situation').textContent=data.situation;
-            document.getElementById('ritual-inter-trend').textContent=data.trend;
-            document.getElementById('ritual-inter-advice').textContent=data.advice;
-            showPage('ritual-step5');
         }
 
         function startEmotion() {
