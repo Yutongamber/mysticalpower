@@ -345,6 +345,18 @@
                     <div class="home-card-arrow">→</div>
                 </div>
             </div>
+
+            <div class="home-card" onclick="openSettings()">
+                <div class="home-card-content">
+                    <div class="home-card-icon">⚙️</div>
+                    <div class="home-card-text">
+                        <div class="home-card-title">设置</div>
+                        <div class="home-card-title-en">Settings</div>
+                        <div class="home-card-desc">配置 AI Oracle 解读引擎</div>
+                    </div>
+                    <div class="home-card-arrow">→</div>
+                </div>
+            </div>
             
             <div class="footer">观其象 · 知其意</div>
         </div>
@@ -461,20 +473,7 @@
                         <div class="result-value" id="inter-advice">把握机遇，顺势而为；保持谦虚，感恩天地。</div>
                     </div>
                 </div>
-                
-                <div class="divider" style="margin:24px 0;"></div>
-                
-                <div class="result-item">
-                    <div class="result-label" id="chat-round-label">继续提问 (0/10)</div>
-                </div>
-                <div class="chat-container" id="chat-container" style="max-height:200px; overflow-y:auto; margin:12px 0; padding:10px; background:rgba(255,255,255,0.02); border-radius:12px;">
-                </div>
-                <div style="display:flex; gap:10px;">
-                    <textarea class="text-input" id="chat-input" rows="2" placeholder="继续提问，围绕此卦深入探讨..." style="flex:1; margin-top:0; resize:none;"></textarea>
-                    <button class="primary-btn" id="send-chat-btn" style="width:auto; padding:12px 20px; margin-top:0;" onclick="sendChatMessage()">发送</button>
-                </div>
-                
-                <button class="secondary-btn" style="margin-top:16px;" onclick="goHome()">🏠 返回首页</button>
+                <button class="primary-btn" style="margin-top:14px;" onclick="goHome()">🏠 返回首页</button>
             </div>
         </div>
 
@@ -483,6 +482,38 @@
                 <div class="card-title">历史记录</div>
                 <div id="history-list"></div>
                 <button class="clear-history-btn" style="margin-top:16px;" onclick="clearHistory()">清空历史记录</button>
+                <button class="secondary-btn" style="margin-top:12px;" onclick="goHome()">← 返回</button>
+            </div>
+        </div>
+
+        <div id="settings-page" class="page">
+            <div class="card">
+                <div class="card-title">设置</div>
+                <div class="hint">配置 AI Oracle 解读引擎</div>
+                
+                <div class="result-item">
+                    <div class="result-label">API Endpoint</div>
+                    <input type="text" class="text-input" id="api-endpoint" placeholder="https://api.openai.com/v1/chat/completions">
+                </div>
+                
+                <div class="result-item">
+                    <div class="result-label">API Key</div>
+                    <input type="password" class="text-input" id="api-key" placeholder="sk-...">
+                </div>
+                
+                <div class="result-item">
+                    <div class="result-label">模型名称</div>
+                    <input type="text" class="text-input" id="model-name" placeholder="gpt-4o-mini">
+                </div>
+                
+                <div class="divider"></div>
+                
+                <div class="result-item">
+                    <div class="result-label">API 状态</div>
+                    <div class="result-value" id="api-status">未配置</div>
+                </div>
+                
+                <button class="primary-btn" style="margin-top:16px;" onclick="saveSettings()">💾 保存设置</button>
                 <button class="secondary-btn" style="margin-top:12px;" onclick="goHome()">← 返回</button>
             </div>
         </div>
@@ -643,9 +674,6 @@
         let resultChanging = 0;
         let resultChanged = '';
         let isTimeDivination = false;
-        let chatHistory = [];
-        let chatRound = 0;
-        const MAX_CHAT_ROUNDS = 10;
 
         function hashCode(str) { let hash=0; for(let i=0;i<str.length;i++){ const char=str.charCodeAt(i); hash=((hash<<5)-hash)+char; hash=hash&hash; } return hash; }
         function seededRandom(seed) { return function() { seed=(seed*9301+49297)%233280; return seed/233280; }; }
@@ -734,6 +762,73 @@
 
         function openWisdom() {
             alert('AI 咨询功能开发中...\n\n敬请期待！');
+        }
+
+        function openSettings() {
+            showPage('settings-page');
+            loadSettings();
+        }
+
+        function loadSettings() {
+            const savedEndpoint = localStorage.getItem('llm_api_endpoint');
+            const savedKey = localStorage.getItem('llm_api_key');
+            const savedModel = localStorage.getItem('llm_model');
+            
+            if (savedEndpoint) {
+                document.getElementById('api-endpoint').value = savedEndpoint;
+                LLM_CONFIG.apiEndpoint = savedEndpoint;
+            } else {
+                document.getElementById('api-endpoint').value = LLM_CONFIG.apiEndpoint;
+            }
+            
+            if (savedKey) {
+                document.getElementById('api-key').value = savedKey;
+                LLM_CONFIG.apiKey = savedKey;
+            }
+            
+            if (savedModel) {
+                document.getElementById('model-name').value = savedModel;
+                LLM_CONFIG.model = savedModel;
+            } else {
+                document.getElementById('model-name').value = LLM_CONFIG.model;
+            }
+            
+            updateApiStatus();
+        }
+
+        function saveSettings() {
+            const endpoint = document.getElementById('api-endpoint').value.trim();
+            const key = document.getElementById('api-key').value.trim();
+            const model = document.getElementById('model-name').value.trim();
+            
+            if (endpoint) {
+                localStorage.setItem('llm_api_endpoint', endpoint);
+                LLM_CONFIG.apiEndpoint = endpoint;
+            }
+            
+            if (key) {
+                localStorage.setItem('llm_api_key', key);
+                LLM_CONFIG.apiKey = key;
+            }
+            
+            if (model) {
+                localStorage.setItem('llm_model', model);
+                LLM_CONFIG.model = model;
+            }
+            
+            updateApiStatus();
+            alert('设置已保存！');
+        }
+
+        function updateApiStatus() {
+            const statusEl = document.getElementById('api-status');
+            if (LLM_CONFIG.apiKey.trim()) {
+                statusEl.textContent = '✅ 已配置';
+                statusEl.style.color = 'rgba(100, 200, 100, 0.9)';
+            } else {
+                statusEl.textContent = '❌ 未配置（使用固定解读）';
+                statusEl.style.color = 'rgba(200, 100, 100, 0.9)';
+            }
         }
 
         function startCoinDivinationNew() {
@@ -826,102 +921,144 @@
             }, 1800);
         }
 
-        function showInterpretation() {
-            const data=hexagramDb[resultPrimary];
-            
-            document.getElementById('inter-oracle').textContent=data.oracle;
-            document.getElementById('inter-current').textContent=data.current;
-            document.getElementById('inter-meaning').textContent=data.meaning;
-            document.getElementById('inter-trend').textContent=data.trend;
-            document.getElementById('inter-advice').textContent=data.advice;
-            
-            // 重置聊天状态
-            chatHistory = [];
-            chatRound = 0;
-            updateChatRoundLabel();
-            document.getElementById('chat-container').innerHTML = '';
-            document.getElementById('chat-input').value = '';
-            document.getElementById('chat-input').placeholder = '继续提问，围绕此卦深入探讨...';
-            document.getElementById('send-chat-btn').disabled = false;
-            
-            showPage('interpretation-page');
-        }
+        // LLM Oracle 配置
+        const LLM_CONFIG = {
+            apiEndpoint: 'https://api.openai.com/v1/chat/completions',
+            apiKey: '', // 用户可以在这里填入自己的 API Key
+            model: 'gpt-4o-mini',
+            temperature: 0.7,
+            maxTokens: 2000
+        };
 
-        function updateChatRoundLabel() {
-            document.getElementById('chat-round-label').textContent = `继续提问 (${chatRound}/${MAX_CHAT_ROUNDS})`;
-        }
-
-        function sendChatMessage() {
-            const input = document.getElementById('chat-input');
-            const userMessage = input.value.trim();
-            
-            if (!userMessage) return;
-            if (chatRound >= MAX_CHAT_ROUNDS) {
-                addChatMessage('system', '已达到最大对话轮数（10轮），请重新起卦。');
-                document.getElementById('send-chat-btn').disabled = true;
-                input.value = '';
-                return;
+        // 调用 LLM 生成解读
+        async function generateLLMInterpretation(question, hexagramName, changingLines, hexagramMeaning) {
+            // 如果没有配置 API Key，使用固定解读
+            if (!LLM_CONFIG.apiKey.trim()) {
+                console.log('未配置 API Key，使用固定解读');
+                return null;
             }
-            
-            // 添加用户消息
-            addChatMessage('user', userMessage);
-            input.value = '';
-            chatRound++;
-            updateChatRoundLabel();
-            
-            // 生成AI回复
-            setTimeout(() => {
-                const aiResponse = generateAIResponse(userMessage);
-                addChatMessage('ai', aiResponse);
-                chatHistory.push({
-                    user: userMessage,
-                    ai: aiResponse
+
+            const systemPrompt = `你是一位易经解读大师，精通东方哲学和人生智慧。
+
+请根据用户的问题和卦象信息，给出温和理性的人生咨询式解读。
+
+解读规则：
+1. 不做绝对预测，用"可能"、"或许"、"倾向于"等温和的表达
+2. 用东方哲学的语言表达，引用易经、道家、儒家的智慧
+3. 更像人生咨询，而非算命，给予启发和思考
+4. 语言温和理性，充满智慧和同理心
+5. 不要使用"一定会"、"必然"、"绝对"等绝对化的词语
+
+请以 JSON 格式输出，包含以下字段：
+- oracle_line: 签语（一句话，富有诗意和哲理，15-30字）
+- situation_analysis: 当前局势分析（2-3句话，分析当前的处境）
+- hexagram_symbolism: 卦象象征意义（2-3句话，解释卦象的哲学含义）
+- future_trend: 未来趋势（2-3句话，温和地预测可能的发展方向）
+- action_advice: 行动建议（2-3句话，给出具体可行的建议）
+
+示例输出格式：
+{
+  "oracle_line": "水流不争先，顺势而行。",
+  "situation_analysis": "你现在的问题更像是在旧结构与新方向之间摇摆。",
+  "hexagram_symbolism": "这个卦象象征变化中的稳定。",
+  "future_trend": "事情不会立即解决，但会逐渐清晰。",
+  "action_advice": "先观察趋势，再做决定。"
+}
+
+请只输出 JSON，不要包含其他文字。`;
+
+            const userPrompt = `用户问题：${question}
+
+卦象名称：${hexagramName}
+变爻位置：第${changingLines}爻
+卦象基本含义：${hexagramMeaning}
+
+请根据以上信息，给出易经解读。`;
+
+            try {
+                const response = await fetch(LLM_CONFIG.apiEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${LLM_CONFIG.apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: LLM_CONFIG.model,
+                        messages: [
+                            { role: 'system', content: systemPrompt },
+                            { role: 'user', content: userPrompt }
+                        ],
+                        temperature: LLM_CONFIG.temperature,
+                        max_tokens: LLM_CONFIG.maxTokens
+                    })
                 });
-            }, 500);
-        }
 
-        function addChatMessage(type, message) {
-            const container = document.getElementById('chat-container');
-            const messageDiv = document.createElement('div');
-            messageDiv.style.marginBottom = '12px';
-            messageDiv.style.padding = '10px 14px';
-            messageDiv.style.borderRadius = '10px';
-            messageDiv.style.fontSize = '13px';
-            messageDiv.style.lineHeight = '1.6';
-            
-            if (type === 'user') {
-                messageDiv.style.background = 'rgba(180, 140, 80, 0.12)';
-                messageDiv.style.border = '1px solid rgba(180, 140, 80, 0.15)';
-                messageDiv.style.marginLeft = '40px';
-                messageDiv.innerHTML = `<div style="color: rgba(200, 160, 100, 0.9);">${escapeHtml(message)}</div>`;
-            } else if (type === 'ai') {
-                messageDiv.style.background = 'rgba(255,255,255,0.02)';
-                messageDiv.style.border = '1px solid rgba(255,255,255,0.05)';
-                messageDiv.style.marginRight = '40px';
-                messageDiv.innerHTML = `<div style="color: rgba(255,255,255,0.85);">${escapeHtml(message)}</div>`;
-            } else {
-                messageDiv.style.textAlign = 'center';
-                messageDiv.style.color = 'rgba(255,255,255,0.6)';
-                messageDiv.innerHTML = `<div style="font-style: italic;">${escapeHtml(message)}</div>`;
+                if (!response.ok) {
+                    throw new Error(`API 请求失败: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const content = data.choices[0].message.content.trim();
+                
+                // 尝试解析 JSON
+                try {
+                    const jsonMatch = content.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) {
+                        return JSON.parse(jsonMatch[0]);
+                    }
+                    return JSON.parse(content);
+                } catch (e) {
+                    console.error('JSON 解析失败:', content);
+                    return null;
+                }
+            } catch (error) {
+                console.error('LLM 调用失败:', error);
+                return null;
             }
-            
-            container.appendChild(messageDiv);
-            container.scrollTop = container.scrollHeight;
         }
 
-        function generateAIResponse(userQuestion) {
-            const data = hexagramDb[resultPrimary] || hexagramDb['乾为天'];
-            const changingLineText = resultChanging > 0 ? `第${resultChanging}爻变化` : '无变爻';
+        // 显示解读（支持 LLM 和固定两种模式）
+        async function showInterpretation() {
+            const data = hexagramDb[resultPrimary];
             
-            const responses = [
-                `根据${resultPrimary}卦${changingLineText}，${userQuestion}这个问题可以从${data.meaning}的角度来思考。`,
-                `结合此卦的含义，${userQuestion}需要注意${data.advice}。`,
-                `从${resultPrimary}卦的趋势来看，${data.trend}对于${userQuestion}是一个重要的启示。`,
-                `${data.current}，这对于${userQuestion}有直接的指导意义。建议${data.advice}。`,
-                `基于${resultPrimary}卦${changingLineText}，${userQuestion}可以参考${data.oracle}的智慧来处理。`
-            ];
+            // 先显示页面
+            showPage('interpretation-page');
             
-            return responses[Math.floor(Math.random() * responses.length)];
+            // 先显示固定解读作为占位
+            document.getElementById('inter-oracle').textContent = data.oracle;
+            document.getElementById('inter-current').textContent = data.current;
+            document.getElementById('inter-meaning').textContent = data.meaning;
+            document.getElementById('inter-trend').textContent = data.trend;
+            document.getElementById('inter-advice').textContent = data.advice;
+            
+            // 尝试调用 LLM 生成动态解读
+            if (LLM_CONFIG.apiKey.trim()) {
+                // 添加加载提示
+                const loadingHint = document.createElement('div');
+                loadingHint.style.cssText = 'text-align: center; padding: 12px; color: rgba(102,126,234,0.8); font-size: 12px; letter-spacing: 2px;';
+                loadingHint.textContent = 'AI 正在解读卦象...';
+                const interpretationCard = document.querySelector('#interpretation-page .result-card');
+                interpretationCard.insertBefore(loadingHint, interpretationCard.firstChild);
+                
+                const llmResult = await generateLLMInterpretation(
+                    currentQuestion,
+                    resultPrimary,
+                    resultChanging,
+                    data.meaning
+                );
+                
+                // 移除加载提示
+                loadingHint.remove();
+                
+                if (llmResult) {
+                    // 使用 LLM 生成的解读
+                    document.getElementById('inter-oracle').textContent = llmResult.oracle_line || data.oracle;
+                    document.getElementById('inter-current').textContent = llmResult.situation_analysis || data.current;
+                    document.getElementById('inter-meaning').textContent = llmResult.hexagram_symbolism || data.meaning;
+                    document.getElementById('inter-trend').textContent = llmResult.future_trend || data.trend;
+                    document.getElementById('inter-advice').textContent = llmResult.action_advice || data.advice;
+                }
+            }
         }
 
         // 历史记录功能
@@ -1017,6 +1154,26 @@
             }
         }
 
+        // 从 localStorage 加载 LLM 配置
+        function loadLLMConfigFromStorage() {
+            const savedEndpoint = localStorage.getItem('llm_api_endpoint');
+            const savedKey = localStorage.getItem('llm_api_key');
+            const savedModel = localStorage.getItem('llm_model');
+            
+            if (savedEndpoint) {
+                LLM_CONFIG.apiEndpoint = savedEndpoint;
+            }
+            
+            if (savedKey) {
+                LLM_CONFIG.apiKey = savedKey;
+            }
+            
+            if (savedModel) {
+                LLM_CONFIG.model = savedModel;
+            }
+        }
+
+        loadLLMConfigFromStorage();
         displayCurrentDate();
         checkDailyDrawn();
     </script>
