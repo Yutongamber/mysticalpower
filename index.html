@@ -532,7 +532,23 @@
                         <div class="result-value" id="inter-advice">把握机遇，顺势而为；保持谦虚，感恩天地。</div>
                     </div>
                 </div>
-                <button class="primary-btn" style="margin-top:14px;" onclick="goHome()">🏠 返回首页</button>
+                
+                <div class="divider" style="margin:24px 0;"></div>
+                
+                <div class="result-item">
+                    <div class="result-label" id="hexagram-chat-round-label">继续提问 (0/10)</div>
+                </div>
+                <div id="hexagram-chat-messages" style="max-height: 240px; overflow-y: auto; margin: 12px 0; padding: 12px; background: rgba(255,255,255,0.02); border-radius: 12px;">
+                    <div style="text-align: center; color: rgba(255,255,255,0.5); font-size: 12px; padding: 16px;">
+                        围绕此卦继续提问，AI 将结合卦象象征为你解答。
+                    </div>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <textarea class="text-input" id="hexagram-chat-input" rows="2" placeholder="围绕此卦继续提问..." style="flex:1; margin-top:0; resize:none;"></textarea>
+                    <button class="primary-btn" id="send-hexagram-chat-btn" style="width:auto; padding:12px 20px; margin-top:0;" onclick="sendHexagramChatMessage()">发送</button>
+                </div>
+                
+                <button class="secondary-btn" style="margin-top:16px;" onclick="goHome()">🏠 返回首页</button>
             </div>
         </div>
 
@@ -1233,6 +1249,12 @@
             maxTokens: 2000
         };
 
+        // Hexagram Conversation 状态
+        let hexagramChatHistory = [];
+        let hexagramChatRound = 0;
+        const MAX_HEXAGRAM_CHAT_ROUNDS = 10;
+        let currentHexagramData = null; // { hexagram, changing_lines, initial_interpretation }
+
         // 调用 LLM 生成解读
         async function generateLLMInterpretation(question, hexagramName, changingLines, hexagramMeaning) {
             // 如果没有配置 API Key，使用固定解读
@@ -1324,6 +1346,33 @@
         async function showInterpretation() {
             const data = hexagramDb[resultPrimary];
             
+            // 保存当前卦象数据
+            currentHexagramData = {
+                hexagram: resultPrimary,
+                changing_lines: resultChanging,
+                initial_interpretation: {
+                    oracle_line: data.oracle,
+                    situation_analysis: data.current,
+                    hexagram_symbolism: data.meaning,
+                    future_trend: data.trend,
+                    action_advice: data.advice
+                }
+            };
+            
+            // 重置 Hexagram Conversation 状态
+            hexagramChatHistory = [];
+            hexagramChatRound = 0;
+            updateHexagramChatRoundLabel();
+            
+            // 清空聊天消息
+            const chatMessages = document.getElementById('hexagram-chat-messages');
+            chatMessages.innerHTML = `
+                <div style="text-align: center; color: rgba(255,255,255,0.5); font-size: 12px; padding: 16px;">
+                    围绕此卦继续提问，AI 将结合卦象象征为你解答。
+                </div>
+            `;
+            document.getElementById('hexagram-chat-input').value = '';
+            
             // 先显示页面
             showPage('interpretation-page');
             
@@ -1360,8 +1409,167 @@
                     document.getElementById('inter-meaning').textContent = llmResult.hexagram_symbolism || data.meaning;
                     document.getElementById('inter-trend').textContent = llmResult.future_trend || data.trend;
                     document.getElementById('inter-advice').textContent = llmResult.action_advice || data.advice;
+                    
+                    // 更新保存的初始解读
+                    currentHexagramData.initial_interpretation = llmResult;
                 }
             }
+        }
+
+        // 更新 Hexagram Chat 轮数显示
+        function updateHexagramChatRoundLabel() {
+            document.getElementById('hexagram-chat-round-label').textContent = 
+                `继续提问 (${hexagramChatRound}/${MAX_HEXAGRAM_CHAT_ROUNDS})`;
+        }
+
+        // 调用 LLM 生成 Hexagram Conversation 回复
+        async function generateHexagramChatResponse(userMessage, conversationHistory, hexagramData) {
+            if (!LLM_CONFIG.apiKey.trim()) {
+                console.log('未配置 API Key，使用固定回复');
+                return `根据${hexagramData.hexagram}卦第${hexagramData.changing_lines}爻的象征，${userMessage}这个问题可以从易经的角度来思考。建议你结合卦象的含义，仔细观察形势的变化。`;
+            }
+
+            const systemPrompt = `你是一位易经解读大师，精通易经哲学和卦象象征。
+
+用户已经起卦得到了一个卦象，现在围绕这个卦象继续提问。
+
+你的回答规则：
+1. 必须紧密结合当前卦象的象征意义
+2. 每个回答都要引用卦象的含义
+3. 不做算命式预测，只做哲学性的启发
+4. 用温和、理性的语言
+5. 帮助用户从易经的角度思考问题
+
+当前卦象信息：
+- 卦象名称：${hexagramData.hexagram}
+- 变爻位置：第${hexagramData.changing_lines}爻
+- 初始解读：${JSON.stringify(hexagramData.initial_interpretation)}
+
+请直接用中文回答，不要输出 JSON。回答要自然流畅，结合卦象象征。`;
+
+            // 构建对话历史
+            let messages = [
+                { role: 'system', content: systemPrompt }
+            ];
+
+            // 添加历史对话
+            conversationHistory.forEach(chat => {
+                messages.push({ role: 'user', content: chat.user });
+                if (chat.ai) {
+                    messages.push({ role: 'assistant', content: chat.ai });
+                }
+            });
+
+            // 添加当前用户消息
+            messages.push({ role: 'user', content: userMessage });
+
+            try {
+                const response = await fetch(LLM_CONFIG.apiEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${LLM_CONFIG.apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: LLM_CONFIG.model,
+                        messages: messages,
+                        temperature: LLM_CONFIG.temperature,
+                        max_tokens: LLM_CONFIG.maxTokens
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API 请求失败: ${response.status}`);
+                }
+
+                const data = await response.json();
+                return data.choices[0].message.content.trim();
+            } catch (error) {
+                console.error('LLM 调用失败:', error);
+                return null;
+            }
+        }
+
+        // 添加 Hexagram Chat 消息到界面
+        function addHexagramChatMessage(type, content) {
+            const chatMessages = document.getElementById('hexagram-chat-messages');
+            
+            // 如果是第一条消息，清空欢迎语
+            if (hexagramChatHistory.length === 0 && type === 'user') {
+                chatMessages.innerHTML = '';
+            }
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${type}`;
+            
+            if (type === 'user') {
+                messageDiv.innerHTML = `
+                    <div class="chat-bubble">${escapeHtml(content)}</div>
+                `;
+            } else {
+                messageDiv.innerHTML = `
+                    <div class="chat-bubble">${escapeHtml(content)}</div>
+                `;
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // 发送 Hexagram Chat 消息
+        async function sendHexagramChatMessage() {
+            const input = document.getElementById('hexagram-chat-input');
+            const userMessage = input.value.trim();
+            
+            if (!userMessage) return;
+            if (!currentHexagramData) {
+                alert('请先起卦后再继续提问！');
+                return;
+            }
+            if (hexagramChatRound >= MAX_HEXAGRAM_CHAT_ROUNDS) {
+                alert(`已达到最大对话轮数（${MAX_HEXAGRAM_CHAT_ROUNDS}轮），请重新起卦。`);
+                return;
+            }
+            
+            // 清空输入
+            input.value = '';
+            
+            // 添加用户消息
+            addHexagramChatMessage('user', userMessage);
+            
+            // 显示加载状态
+            const chatMessages = document.getElementById('hexagram-chat-messages');
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = 'hexagram-chat-loading';
+            loadingDiv.style.cssText = 'text-align: center; padding: 16px; color: rgba(102,126,234,0.8); font-size: 12px; letter-spacing: 2px;';
+            loadingDiv.textContent = 'AI 正在结合卦象思考...';
+            chatMessages.appendChild(loadingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // 生成 AI 回复
+            const aiResponse = await generateHexagramChatResponse(
+                userMessage, 
+                hexagramChatHistory, 
+                currentHexagramData
+            );
+            
+            // 移除加载状态
+            loadingDiv.remove();
+            
+            // 如果 API 调用失败，使用固定回复
+            const finalResponse = aiResponse || 
+                `根据${currentHexagramData.hexagram}卦第${currentHexagramData.changing_lines}爻的象征，${userMessage}这个问题可以从易经的角度来思考。建议你结合卦象的含义，仔细观察形势的变化。`;
+            
+            // 添加 AI 消息
+            addHexagramChatMessage('ai', finalResponse);
+            
+            // 保存到历史
+            hexagramChatHistory.push({
+                user: userMessage,
+                ai: finalResponse
+            });
+            hexagramChatRound++;
+            updateHexagramChatRoundLabel();
         }
 
         // 历史记录功能
@@ -1496,6 +1704,17 @@
                     if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
                         sendChatMessage();
+                    }
+                });
+            }
+            
+            // 为 Hexagram Chat 输入框添加 Enter 键监听
+            const hexagramChatInput = document.getElementById('hexagram-chat-input');
+            if (hexagramChatInput) {
+                hexagramChatInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        sendHexagramChatMessage();
                     }
                 });
             }
