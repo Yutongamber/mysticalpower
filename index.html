@@ -289,6 +289,65 @@
         .history-time { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 6px; }
         .clear-history-btn { width: 100%; background: transparent; color: rgba(255,100,100,0.6); border: 1px solid rgba(255,100,100,0.2); padding: 12px; border-radius: 12px; font-size: 12px; cursor: pointer; transition: all 0.3s; letter-spacing: 2px; }
         .clear-history-btn:hover { background: rgba(255,100,100,0.1); border-color: rgba(255,100,100,0.4); }
+
+        /* Oracle Chat 消息样式 */
+        .chat-message {
+            margin: 16px 0;
+            animation: fadeIn 0.4s ease;
+        }
+        .chat-message.user {
+            margin-left: 40px;
+        }
+        .chat-message.ai {
+            margin-right: 40px;
+        }
+        .chat-bubble {
+            padding: 14px 16px;
+            border-radius: 16px;
+            font-size: 14px;
+            line-height: 1.8;
+            font-weight: 300;
+        }
+        .chat-message.user .chat-bubble {
+            background: rgba(180, 140, 80, 0.15);
+            border: 1px solid rgba(180, 140, 80, 0.2);
+            color: rgba(200, 160, 100, 0.9);
+        }
+        .chat-message.ai .chat-bubble {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.85);
+        }
+        .chat-reflection {
+            font-style: italic;
+            color: rgba(102,126,234,0.9);
+            margin-bottom: 10px;
+            padding-left: 12px;
+            border-left: 2px solid rgba(102,126,234,0.3);
+        }
+        .chat-philosophical {
+            margin: 10px 0;
+            color: rgba(255,255,255,0.8);
+        }
+        .chat-suggestion {
+            margin: 10px 0;
+            color: rgba(200, 160, 100, 0.9);
+        }
+        .chat-hexagram {
+            margin-top: 12px;
+            padding: 10px 14px;
+            background: rgba(102,126,234,0.08);
+            border-radius: 10px;
+            border: 1px solid rgba(102,126,234,0.2);
+            font-size: 13px;
+            color: rgba(102,126,234,0.9);
+        }
+        .chat-label {
+            font-size: 11px;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 4px;
+            letter-spacing: 2px;
+        }
     </style>
 </head>
 <body>
@@ -482,6 +541,28 @@
                 <div class="card-title">历史记录</div>
                 <div id="history-list"></div>
                 <button class="clear-history-btn" style="margin-top:16px;" onclick="clearHistory()">清空历史记录</button>
+                <button class="secondary-btn" style="margin-top:12px;" onclick="goHome()">← 返回</button>
+            </div>
+        </div>
+
+        <div id="chat-page" class="page">
+            <div class="card" style="padding: 20px;">
+                <div class="card-title">AI 咨询</div>
+                <div class="hint">以易经哲学，解答你的困惑</div>
+                
+                <div id="chat-messages" style="max-height: 320px; overflow-y: auto; margin: 16px 0; padding: 12px; background: rgba(255,255,255,0.02); border-radius: 12px;">
+                    <div style="text-align: center; color: rgba(255,255,255,0.5); font-size: 12px; padding: 20px;">
+                        你好，我是 Oracle AI 顾问。<br>
+                        请告诉我你的困惑，我会以易经哲学为你解答。
+                    </div>
+                </div>
+                
+                <div style="display:flex; gap:10px;">
+                    <textarea class="text-input" id="chat-input" rows="2" placeholder="请输入你的问题..." style="flex:1; margin-top:0; resize:none;"></textarea>
+                    <button class="primary-btn" id="send-chat-btn" style="width:auto; padding:12px 20px; margin-top:0;" onclick="sendChatMessage()">发送</button>
+                </div>
+                
+                <button class="secondary-btn" style="margin-top:16px;" onclick="clearChatHistory()">🗑️ 清空对话</button>
                 <button class="secondary-btn" style="margin-top:12px;" onclick="goHome()">← 返回</button>
             </div>
         </div>
@@ -760,8 +841,230 @@
             showPage('divination-select-page');
         }
 
+        // Oracle Chat 状态管理
+        let oracleChatHistory = [];
+
         function openWisdom() {
-            alert('AI 咨询功能开发中...\n\n敬请期待！');
+            showPage('chat-page');
+            
+            // 加载历史消息
+            const chatMessages = document.getElementById('chat-messages');
+            if (oracleChatHistory.length > 0) {
+                chatMessages.innerHTML = '';
+                oracleChatHistory.forEach(chat => {
+                    addChatMessage('user', chat.user);
+                    addChatMessage('ai', chat.ai);
+                });
+            } else {
+                chatMessages.innerHTML = `
+                    <div style="text-align: center; color: rgba(255,255,255,0.5); font-size: 12px; padding: 20px;">
+                        你好，我是 Oracle AI 顾问。<br>
+                        请告诉我你的困惑，我会以易经哲学为你解答。
+                    </div>
+                `;
+            }
+        }
+
+        function clearChatHistory() {
+            if (confirm('确定要清空对话历史吗？')) {
+                oracleChatHistory = [];
+                localStorage.removeItem('oracle_chat_history');
+                const chatMessages = document.getElementById('chat-messages');
+                chatMessages.innerHTML = `
+                    <div style="text-align: center; color: rgba(255,255,255,0.5); font-size: 12px; padding: 20px;">
+                        你好，我是 Oracle AI 顾问。<br>
+                        请告诉我你的困惑，我会以易经哲学为你解答。
+                    </div>
+                `;
+            }
+        }
+
+        // 调用 LLM 生成 Oracle Chat 回复
+        async function generateOracleChatResponse(userMessage, conversationHistory) {
+            if (!LLM_CONFIG.apiKey.trim()) {
+                console.log('未配置 API Key，使用固定回复');
+                return {
+                    reflection: '你的问题让我想到了易经中的智慧。',
+                    philosophical_insight: '易经认为，变化是永恒的，我们需要学会适应变化。',
+                    suggestion: '建议你先冷静思考，观察形势的变化。',
+                    optional_hexagram: null
+                };
+            }
+
+            const systemPrompt = `你是一位融合易经哲学、东方智慧、人生咨询的 AI 顾问。
+
+你的角色：
+- 精通易经哲学和东方智慧
+- 像一位智慧的人生导师
+- 帮助用户思考，而不是给出标准答案
+- 用温和、理性、充满同理心的语言
+
+回答规则：
+1. 不做算命式预测，不预测未来具体事件
+2. 更像哲学咨询，引导用户思考
+3. 帮助用户从易经哲学的角度看待问题
+4. 语言温和理性，充满智慧和同理心
+5. 不使用"一定会"、"必然"、"绝对"等绝对化词语
+
+请以 JSON 格式输出，包含以下字段：
+- reflection: 反思（一句话，点出用户问题背后的深层含义）
+- philosophical_insight: 哲学洞见（2-3句话，引用易经或东方哲学智慧）
+- suggestion: 建议（2-3句话，给出具体可行的建议）
+- optional_hexagram: 可选卦象（可选，如果合适，可以推荐一个相关的卦象名称）
+
+示例输出格式：
+{
+  "reflection": "你的问题其实反映了一种方向不确定感。",
+  "philosophical_insight": "易经认为变化本身就是秩序的一部分。",
+  "suggestion": "先尝试小改变，而不是做巨大决策。",
+  "optional_hexagram": "地天泰"
+}
+
+请只输出 JSON，不要包含其他文字。`;
+
+            // 构建对话历史
+            let messages = [
+                { role: 'system', content: systemPrompt }
+            ];
+
+            // 添加历史对话
+            conversationHistory.forEach(chat => {
+                messages.push({ role: 'user', content: chat.user });
+                if (chat.ai) {
+                    messages.push({ role: 'assistant', content: JSON.stringify(chat.ai) });
+                }
+            });
+
+            // 添加当前用户消息
+            messages.push({ role: 'user', content: userMessage });
+
+            try {
+                const response = await fetch(LLM_CONFIG.apiEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${LLM_CONFIG.apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: LLM_CONFIG.model,
+                        messages: messages,
+                        temperature: LLM_CONFIG.temperature,
+                        max_tokens: LLM_CONFIG.maxTokens
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API 请求失败: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const content = data.choices[0].message.content.trim();
+                
+                // 尝试解析 JSON
+                try {
+                    const jsonMatch = content.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) {
+                        return JSON.parse(jsonMatch[0]);
+                    }
+                    return JSON.parse(content);
+                } catch (e) {
+                    console.error('JSON 解析失败:', content);
+                    return null;
+                }
+            } catch (error) {
+                console.error('LLM 调用失败:', error);
+                return null;
+            }
+        }
+
+        // 添加聊天消息到界面
+        function addChatMessage(type, content) {
+            const chatMessages = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${type}`;
+            
+            if (type === 'user') {
+                messageDiv.innerHTML = `
+                    <div class="chat-bubble">${escapeHtml(content)}</div>
+                `;
+            } else {
+                // AI 消息，结构化显示
+                let html = '<div class="chat-bubble">';
+                
+                if (content.reflection) {
+                    html += `<div class="chat-label">反思</div>`;
+                    html += `<div class="chat-reflection">${escapeHtml(content.reflection)}</div>`;
+                }
+                
+                if (content.philosophical_insight) {
+                    html += `<div class="chat-label">哲学洞见</div>`;
+                    html += `<div class="chat-philosophical">${escapeHtml(content.philosophical_insight)}</div>`;
+                }
+                
+                if (content.suggestion) {
+                    html += `<div class="chat-label">建议</div>`;
+                    html += `<div class="chat-suggestion">${escapeHtml(content.suggestion)}</div>`;
+                }
+                
+                if (content.optional_hexagram) {
+                    html += `<div class="chat-hexagram">☯️ 参考卦象：${escapeHtml(content.optional_hexagram)}</div>`;
+                }
+                
+                html += '</div>';
+                messageDiv.innerHTML = html;
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // 发送聊天消息
+        async function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const userMessage = input.value.trim();
+            
+            if (!userMessage) return;
+            
+            // 清空输入
+            input.value = '';
+            
+            // 添加用户消息
+            addChatMessage('user', userMessage);
+            
+            // 显示加载状态
+            const chatMessages = document.getElementById('chat-messages');
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = 'chat-loading';
+            loadingDiv.style.cssText = 'text-align: center; padding: 16px; color: rgba(102,126,234,0.8); font-size: 12px; letter-spacing: 2px;';
+            loadingDiv.textContent = 'AI 正在思考...';
+            chatMessages.appendChild(loadingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // 生成 AI 回复
+            const aiResponse = await generateOracleChatResponse(userMessage, oracleChatHistory);
+            
+            // 移除加载状态
+            loadingDiv.remove();
+            
+            // 如果 API 调用失败，使用固定回复
+            const finalResponse = aiResponse || {
+                reflection: '你的问题让我想到了易经中的智慧。',
+                philosophical_insight: '易经认为，变化是永恒的，我们需要学会适应变化。',
+                suggestion: '建议你先冷静思考，观察形势的变化。',
+                optional_hexagram: null
+            };
+            
+            // 添加 AI 消息
+            addChatMessage('ai', finalResponse);
+            
+            // 保存到历史
+            oracleChatHistory.push({
+                user: userMessage,
+                ai: finalResponse
+            });
+            
+            // 持久化到 localStorage
+            localStorage.setItem('oracle_chat_history', JSON.stringify(oracleChatHistory));
         }
 
         function openSettings() {
@@ -1173,7 +1476,33 @@
             }
         }
 
+        // 页面加载时恢复 Oracle Chat 历史
+        function initOracleChat() {
+            // 从 localStorage 加载聊天历史
+            const savedHistory = localStorage.getItem('oracle_chat_history');
+            if (savedHistory) {
+                try {
+                    oracleChatHistory = JSON.parse(savedHistory);
+                } catch (e) {
+                    console.error('聊天历史解析失败', e);
+                    oracleChatHistory = [];
+                }
+            }
+            
+            // 为聊天输入框添加 Enter 键监听
+            const chatInput = document.getElementById('chat-input');
+            if (chatInput) {
+                chatInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        sendChatMessage();
+                    }
+                });
+            }
+        }
+
         loadLLMConfigFromStorage();
+        initOracleChat();
         displayCurrentDate();
         checkDailyDrawn();
     </script>
