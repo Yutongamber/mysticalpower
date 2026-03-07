@@ -405,6 +405,18 @@
                 </div>
             </div>
 
+            <div class="home-card" onclick="openEmotionCompanion()">
+                <div class="home-card-content">
+                    <div class="home-card-icon">💛</div>
+                    <div class="home-card-text">
+                        <div class="home-card-title">情绪陪伴</div>
+                        <div class="home-card-title-en">Emotion Companion</div>
+                        <div class="home-card-desc">以易经智慧，安抚你的情绪</div>
+                    </div>
+                    <div class="home-card-arrow">→</div>
+                </div>
+            </div>
+
             <div class="home-card" onclick="openSettings()">
                 <div class="home-card-content">
                     <div class="home-card-icon">⚙️</div>
@@ -580,6 +592,60 @@
                 
                 <button class="secondary-btn" style="margin-top:16px;" onclick="clearChatHistory()">🗑️ 清空对话</button>
                 <button class="secondary-btn" style="margin-top:12px;" onclick="goHome()">← 返回</button>
+            </div>
+        </div>
+
+        <div id="emotion-page" class="page">
+            <div class="card" style="padding: 20px;">
+                <div class="card-title">情绪陪伴</div>
+                <div class="hint">选择你的情绪，让易经智慧陪伴你</div>
+                
+                <div class="result-item">
+                    <div class="result-label">此刻的感受</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px;">
+                        <button class="primary-btn" style="font-size: 13px; padding: 14px 8px; letter-spacing: 1px;" onclick="selectEmotion('焦虑')">😰 焦虑</button>
+                        <button class="primary-btn" style="font-size: 13px; padding: 14px 8px; letter-spacing: 1px;" onclick="selectEmotion('迷茫')">🌫️ 迷茫</button>
+                        <button class="primary-btn" style="font-size: 13px; padding: 14px 8px; letter-spacing: 1px;" onclick="selectEmotion('孤独')">🌙 孤独</button>
+                        <button class="primary-btn" style="font-size: 13px; padding: 14px 8px; letter-spacing: 1px;" onclick="selectEmotion('压力')">💪 压力</button>
+                        <button class="primary-btn" style="font-size: 13px; padding: 14px 8px; letter-spacing: 1px;" onclick="selectEmotion('失望')">💔 失望</button>
+                        <button class="primary-btn" style="font-size: 13px; padding: 14px 8px; letter-spacing: 1px;" onclick="selectEmotion('期待')">✨ 期待</button>
+                    </div>
+                </div>
+                
+                <div class="result-item" style="margin-top: 16px;">
+                    <div class="result-label">想说的话（可选）</div>
+                    <textarea class="text-input" id="emotion-message" rows="3" placeholder="可以告诉我更多..."></textarea>
+                </div>
+                
+                <button class="primary-btn" style="margin-top: 16px;" onclick="generateEmotionCompanion()">💛 开始陪伴</button>
+                <button class="secondary-btn" style="margin-top:12px;" onclick="goHome()">← 返回</button>
+            </div>
+        </div>
+
+        <div id="emotion-result-page" class="page">
+            <div class="card">
+                <div class="card-title">情绪陪伴</div>
+                <div class="result-card" style="display:block;">
+                    <div class="result-item">
+                        <div class="result-label">情绪共鸣</div>
+                        <div class="result-value" id="emotion-reflection" style="color: rgba(102,126,234,0.9); font-style: italic;">你现在的焦虑更像是在未知面前的不安。</div>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="result-item">
+                        <div class="result-label">推荐卦象</div>
+                        <div class="result-value" id="emotion-hexagram" style="font-size: 20px; color: rgba(102,126,234,0.9);">坎卦</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">Oracle 签语</div>
+                        <div class="result-value fortune" id="emotion-oracle">水虽深，行则有路。</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">陪伴建议</div>
+                        <div class="result-value" id="emotion-guidance">现在最重要的是稳定节奏。</div>
+                    </div>
+                </div>
+                <button class="primary-btn" style="margin-top:14px;" onclick="openEmotionCompanion()">💛 再次陪伴</button>
+                <button class="secondary-btn" style="margin-top:12px;" onclick="goHome()">🏠 返回首页</button>
             </div>
         </div>
 
@@ -855,6 +921,205 @@
         function openDivination() {
             document.getElementById('divination-question-new').value = '';
             showPage('divination-select-page');
+        }
+
+        // 情绪陪伴状态
+        let selectedEmotion = '';
+
+        // 情绪与卦象映射
+        const emotionHexagramMap = {
+            '焦虑': '坎为水',
+            '迷茫': '山水蒙',
+            '孤独': '地山谦',
+            '压力': '天雷无妄',
+            '失望': '地雷复',
+            '期待': '风天小畜'
+        };
+
+        // 情绪陪伴固定回复（备用）
+        const emotionFixedResponses = {
+            '焦虑': {
+                emotion_reflection: '你现在的焦虑更像是在未知面前的不安。',
+                hexagram_recommendation: '坎为水',
+                oracle_message: '水虽深，行则有路。',
+                guidance: '现在最重要的是稳定节奏，一步一步往前走。'
+            },
+            '迷茫': {
+                emotion_reflection: '你现在的迷茫像是在迷雾中寻找方向。',
+                hexagram_recommendation: '山水蒙',
+                oracle_message: '山下有泉，蒙以养正。',
+                guidance: '保持学习的心态，答案会慢慢浮现。'
+            },
+            '孤独': {
+                emotion_reflection: '你现在的孤独像是在独自前行的路上。',
+                hexagram_recommendation: '地山谦',
+                oracle_message: '山在地中，谦而有礼。',
+                guidance: '学会与自己相处，孤独也是一种成长。'
+            },
+            '压力': {
+                emotion_reflection: '你现在的压力像是背负着太多前行。',
+                hexagram_recommendation: '天雷无妄',
+                oracle_message: '天下雷行，物与无妄。',
+                guidance: '放下过多的期待，专注于当下的事情。'
+            },
+            '失望': {
+                emotion_reflection: '你现在的失望像是期待落空后的失落。',
+                hexagram_recommendation: '地雷复',
+                oracle_message: '雷在地中，阳气来复。',
+                guidance: '失望之后是新的开始，给自己一点时间。'
+            },
+            '期待': {
+                emotion_reflection: '你现在的期待像是春天里等待花开的心情。',
+                hexagram_recommendation: '风天小畜',
+                oracle_message: '风行天上，小畜以懿。',
+                guidance: '保持期待，但也要做好当下的准备。'
+            }
+        };
+
+        function openEmotionCompanion() {
+            selectedEmotion = '';
+            document.getElementById('emotion-message').value = '';
+            showPage('emotion-page');
+        }
+
+        function selectEmotion(emotion) {
+            selectedEmotion = emotion;
+            
+            // 更新按钮样式，显示选中状态
+            const buttons = document.querySelectorAll('#emotion-page .primary-btn');
+            buttons.forEach(btn => {
+                if (btn.textContent.includes(emotion)) {
+                    btn.style.background = 'rgba(102,126,234,0.25)';
+                    btn.style.borderColor = 'rgba(102,126,234,0.4)';
+                } else {
+                    btn.style.background = 'linear-gradient(135deg, rgba(102,126,234,0.15) 0%, rgba(118,75,162,0.15) 100%)';
+                    btn.style.borderColor = 'rgba(102,126,234,0.25)';
+                }
+            });
+        }
+
+        // 调用 LLM 生成情绪陪伴回复
+        async function generateEmotionCompanionLLM(emotion, message) {
+            if (!LLM_CONFIG.apiKey.trim()) {
+                console.log('未配置 API Key，使用固定回复');
+                return null;
+            }
+
+            const systemPrompt = `你是一位情绪陪伴 AI，精通易经哲学和东方智慧。
+
+用户现在处于某种情绪中，需要你的陪伴和安抚。
+
+你的任务：
+1. 识别并共情用户的情绪
+2. 从 64 卦中推荐一个最适合的卦象
+3. 给出温暖、理性的安抚建议
+4. 语言要温和、有同理心、充满智慧
+
+支持的情绪：焦虑、迷茫、孤独、压力、失望、期待
+
+请以 JSON 格式输出，包含以下字段：
+- emotion_reflection: 情绪共鸣（一句话，共情用户的情绪）
+- hexagram_recommendation: 推荐卦象（从 64 卦中选择一个最合适的）
+- oracle_message: Oracle 签语（一句话，富有诗意和哲理）
+- guidance: 陪伴建议（2-3句话，给出具体的安抚建议）
+
+示例输出格式：
+{
+  "emotion_reflection": "你现在的焦虑更像是在未知面前的不安。",
+  "hexagram_recommendation": "坎为水",
+  "oracle_message": "水虽深，行则有路。",
+  "guidance": "现在最重要的是稳定节奏。"
+}
+
+请只输出 JSON，不要包含其他文字。`;
+
+            const userPrompt = `用户情绪：${emotion}
+用户想说的话：${message || '（用户没有说更多）'}
+
+请给出情绪陪伴回复。`;
+
+            try {
+                const response = await fetch(LLM_CONFIG.apiEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${LLM_CONFIG.apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: LLM_CONFIG.model,
+                        messages: [
+                            { role: 'system', content: systemPrompt },
+                            { role: 'user', content: userPrompt }
+                        ],
+                        temperature: LLM_CONFIG.temperature,
+                        max_tokens: LLM_CONFIG.maxTokens
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API 请求失败: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const content = data.choices[0].message.content.trim();
+                
+                // 尝试解析 JSON
+                try {
+                    const jsonMatch = content.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) {
+                        return JSON.parse(jsonMatch[0]);
+                    }
+                    return JSON.parse(content);
+                } catch (e) {
+                    console.error('JSON 解析失败:', content);
+                    return null;
+                }
+            } catch (error) {
+                console.error('LLM 调用失败:', error);
+                return null;
+            }
+        }
+
+        async function generateEmotionCompanion() {
+            if (!selectedEmotion) {
+                alert('请先选择一种情绪～');
+                return;
+            }
+            
+            const message = document.getElementById('emotion-message').value.trim();
+            
+            // 先显示页面
+            showPage('emotion-result-page');
+            
+            // 先显示固定回复作为占位
+            const fixedResponse = emotionFixedResponses[selectedEmotion];
+            document.getElementById('emotion-reflection').textContent = fixedResponse.emotion_reflection;
+            document.getElementById('emotion-hexagram').textContent = fixedResponse.hexagram_recommendation;
+            document.getElementById('emotion-oracle').textContent = fixedResponse.oracle_message;
+            document.getElementById('emotion-guidance').textContent = fixedResponse.guidance;
+            
+            // 尝试调用 LLM 生成动态回复
+            if (LLM_CONFIG.apiKey.trim()) {
+                // 添加加载提示
+                const resultCard = document.querySelector('#emotion-result-page .result-card');
+                const loadingHint = document.createElement('div');
+                loadingHint.style.cssText = 'text-align: center; padding: 12px; color: rgba(102,126,234,0.8); font-size: 12px; letter-spacing: 2px;';
+                loadingHint.textContent = 'AI 正在陪伴你...';
+                resultCard.insertBefore(loadingHint, resultCard.firstChild);
+                
+                const llmResult = await generateEmotionCompanionLLM(selectedEmotion, message);
+                
+                // 移除加载提示
+                loadingHint.remove();
+                
+                if (llmResult) {
+                    // 使用 LLM 生成的回复
+                    document.getElementById('emotion-reflection').textContent = llmResult.emotion_reflection || fixedResponse.emotion_reflection;
+                    document.getElementById('emotion-hexagram').textContent = llmResult.hexagram_recommendation || fixedResponse.hexagram_recommendation;
+                    document.getElementById('emotion-oracle').textContent = llmResult.oracle_message || fixedResponse.oracle_message;
+                    document.getElementById('emotion-guidance').textContent = llmResult.guidance || fixedResponse.guidance;
+                }
+            }
         }
 
         // Oracle Chat 状态管理
