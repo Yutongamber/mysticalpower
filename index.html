@@ -686,6 +686,17 @@
                     <div class="result-value" id="api-status">未配置</div>
                 </div>
                 
+                <div class="divider"></div>
+                
+                <div class="result-item">
+                    <div class="result-label">🧪 测试 API 连接</div>
+                    <div style="margin-top: 12px;">
+                        <textarea class="text-input" id="api-test-message" rows="2" placeholder="输入测试消息..." style="margin-bottom: 10px;">请用一句话介绍易经</textarea>
+                        <button class="primary-btn" id="api-test-btn" onclick="testApiConnection()" style="margin-bottom: 10px;">🧪 发送测试</button>
+                        <div id="api-test-result" class="result-card" style="display: none; margin-top: 10px; max-height: 200px; overflow-y: auto; font-size: 12px;"></div>
+                    </div>
+                </div>
+                
                 <button class="primary-btn" style="margin-top:16px;" onclick="saveSettings()">💾 保存设置</button>
                 <button class="secondary-btn" style="margin-top:12px;" onclick="goHome()">← 返回</button>
             </div>
@@ -1049,13 +1060,12 @@
 请给出情绪陪伴回复。`;
 
             try {
-                const response = await fetch(LLM_CONFIG.apiEndpoint, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${LLM_CONFIG.apiKey}`
-                    },
-                    body: JSON.stringify({
+                let requestBody;
+                let endpoint = LLM_CONFIG.apiEndpoint;
+                
+                if (LLM_CONFIG.apiType === 'openai') {
+                    // OpenAI 格式
+                    requestBody = {
                         model: LLM_CONFIG.model,
                         messages: [
                             { role: 'system', content: systemPrompt },
@@ -1063,7 +1073,28 @@
                         ],
                         temperature: LLM_CONFIG.temperature,
                         max_tokens: LLM_CONFIG.maxTokens
-                    })
+                    };
+                } else if (LLM_CONFIG.apiType === 'ark') {
+                    // 火山引擎 ARK 格式
+                    const fullMessage = systemPrompt + '\n\n' + userPrompt;
+                    requestBody = {
+                        model: LLM_CONFIG.model,
+                        input: [
+                            {
+                                role: 'user',
+                                content: [{ type: 'input_text', text: fullMessage }]
+                            }
+                        ]
+                    };
+                }
+                
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${LLM_CONFIG.apiKey}`
+                    },
+                    body: JSON.stringify(requestBody)
                 });
 
                 if (!response.ok) {
@@ -1071,7 +1102,21 @@
                 }
 
                 const data = await response.json();
-                const content = data.choices[0].message.content.trim();
+                
+                // 提取回复内容
+                let content;
+                if (LLM_CONFIG.apiType === 'openai') {
+                    content = data.choices[0].message.content.trim();
+                } else if (LLM_CONFIG.apiType === 'ark') {
+                    if (data.output && data.output.message && data.output.message.content) {
+                        content = data.output.message.content;
+                    } else if (data.choices && data.choices.length > 0) {
+                        content = data.choices[0].message.content.trim();
+                    } else {
+                        console.error('无法从 ARK 响应中提取内容:', data);
+                        return null;
+                    }
+                }
                 
                 // 尝试解析 JSON
                 try {
@@ -1230,18 +1275,55 @@
             messages.push({ role: 'user', content: userMessage });
 
             try {
-                const response = await fetch(LLM_CONFIG.apiEndpoint, {
+                let requestBody;
+                let endpoint = LLM_CONFIG.apiEndpoint;
+                
+                if (LLM_CONFIG.apiType === 'openai') {
+                    // OpenAI 格式
+                    requestBody = {
+                        model: LLM_CONFIG.model,
+                        messages: messages,
+                        temperature: LLM_CONFIG.temperature,
+                        max_tokens: LLM_CONFIG.maxTokens
+                    };
+                } else if (LLM_CONFIG.apiType === 'ark') {
+                    // 火山引擎 ARK 格式
+                    let input = [];
+                    
+                    // 添加历史对话
+                    conversationHistory.forEach(chat => {
+                        input.push({
+                            role: 'user',
+                            content: [{ type: 'input_text', text: chat.user }]
+                        });
+                        if (chat.ai) {
+                            input.push({
+                                role: 'assistant',
+                                content: [{ type: 'input_text', text: JSON.stringify(chat.ai) }]
+                            });
+                        }
+                    });
+                    
+                    // 添加系统提示和当前用户消息
+                    const fullMessage = systemPrompt + '\n\n' + userMessage;
+                    input.push({
+                        role: 'user',
+                        content: [{ type: 'input_text', text: fullMessage }]
+                    });
+                    
+                    requestBody = {
+                        model: LLM_CONFIG.model,
+                        input: input
+                    };
+                }
+                
+                const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${LLM_CONFIG.apiKey}`
                     },
-                    body: JSON.stringify({
-                        model: LLM_CONFIG.model,
-                        messages: messages,
-                        temperature: LLM_CONFIG.temperature,
-                        max_tokens: LLM_CONFIG.maxTokens
-                    })
+                    body: JSON.stringify(requestBody)
                 });
 
                 if (!response.ok) {
@@ -1249,7 +1331,21 @@
                 }
 
                 const data = await response.json();
-                const content = data.choices[0].message.content.trim();
+                
+                // 提取回复内容
+                let content;
+                if (LLM_CONFIG.apiType === 'openai') {
+                    content = data.choices[0].message.content.trim();
+                } else if (LLM_CONFIG.apiType === 'ark') {
+                    if (data.output && data.output.message && data.output.message.content) {
+                        content = data.output.message.content;
+                    } else if (data.choices && data.choices.length > 0) {
+                        content = data.choices[0].message.content.trim();
+                    } else {
+                        console.error('无法从 ARK 响应中提取内容:', data);
+                        return null;
+                    }
+                }
                 
                 // 尝试解析 JSON
                 try {
@@ -1435,6 +1531,105 @@
                 statusEl.textContent = '❌ 未配置（使用固定解读）';
                 statusEl.style.color = 'rgba(200, 100, 100, 0.9)';
             }
+        }
+
+        // 测试 API 连接
+        async function testApiConnection() {
+            const testBtn = document.getElementById('api-test-btn');
+            const resultEl = document.getElementById('api-test-result');
+            const testMessage = document.getElementById('api-test-message').value.trim();
+            
+            if (!LLM_CONFIG.apiKey.trim()) {
+                alert('请先配置 API Key！');
+                return;
+            }
+            
+            if (!testMessage) {
+                alert('请输入测试消息！');
+                return;
+            }
+            
+            testBtn.disabled = true;
+            testBtn.textContent = '⏳ 测试中...';
+            resultEl.style.display = 'block';
+            resultEl.textContent = '🔍 正在发送请求...\n\nAPI 类型: ' + LLM_CONFIG.apiType + '\n端点: ' + LLM_CONFIG.apiEndpoint + '\n模型: ' + LLM_CONFIG.model;
+            
+            const startTime = Date.now();
+            
+            try {
+                let requestBody;
+                let endpoint = LLM_CONFIG.apiEndpoint;
+                
+                if (LLM_CONFIG.apiType === 'openai') {
+                    // OpenAI 格式
+                    requestBody = {
+                        model: LLM_CONFIG.model,
+                        messages: [
+                            { role: 'system', content: '你是一个 helpful 的助手。' },
+                            { role: 'user', content: testMessage }
+                        ],
+                        temperature: LLM_CONFIG.temperature,
+                        max_tokens: 500
+                    };
+                } else if (LLM_CONFIG.apiType === 'ark') {
+                    // 火山引擎 ARK 格式
+                    requestBody = {
+                        model: LLM_CONFIG.model,
+                        input: [
+                            {
+                                role: 'user',
+                                content: [{ type: 'input_text', text: testMessage }]
+                            }
+                        ]
+                    };
+                }
+                
+                resultEl.textContent += '\n\n📤 请求体:\n' + JSON.stringify(requestBody, null, 2);
+                
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${LLM_CONFIG.apiKey}`
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+                
+                resultEl.textContent += '\n\n📡 响应状态: ' + response.status + '\n⏱️ 耗时: ' + duration + 'ms';
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultEl.textContent += '\n\n✅ 请求成功！\n\n📄 完整响应:\n' + JSON.stringify(data, null, 2);
+                    
+                    // 提取回复内容
+                    let content;
+                    if (LLM_CONFIG.apiType === 'openai') {
+                        content = data.choices[0].message.content.trim();
+                    } else if (LLM_CONFIG.apiType === 'ark') {
+                        if (data.output && data.output.message && data.output.message.content) {
+                            content = data.output.message.content;
+                        } else if (data.choices && data.choices.length > 0) {
+                            content = data.choices[0].message.content.trim();
+                        }
+                    }
+                    
+                    if (content) {
+                        resultEl.textContent += '\n\n💬 AI 回复:\n' + content;
+                    }
+                } else {
+                    const errorText = await response.text();
+                    resultEl.textContent += '\n\n❌ 请求失败！\n\n📄 错误响应:\n' + errorText;
+                }
+                
+            } catch (error) {
+                resultEl.textContent += '\n\n❌ 发生错误:\n' + error.name + ': ' + error.message + '\n\n' + error.stack;
+            }
+            
+            testBtn.disabled = false;
+            testBtn.textContent = '🧪 发送测试';
         }
 
         function startCoinDivinationNew() {
@@ -1714,13 +1909,12 @@
 请根据以上信息，给出易经解读。`;
 
             try {
-                const response = await fetch(LLM_CONFIG.apiEndpoint, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${LLM_CONFIG.apiKey}`
-                    },
-                    body: JSON.stringify({
+                let requestBody;
+                let endpoint = LLM_CONFIG.apiEndpoint;
+                
+                if (LLM_CONFIG.apiType === 'openai') {
+                    // OpenAI 格式
+                    requestBody = {
                         model: LLM_CONFIG.model,
                         messages: [
                             { role: 'system', content: systemPrompt },
@@ -1728,7 +1922,28 @@
                         ],
                         temperature: LLM_CONFIG.temperature,
                         max_tokens: LLM_CONFIG.maxTokens
-                    })
+                    };
+                } else if (LLM_CONFIG.apiType === 'ark') {
+                    // 火山引擎 ARK 格式
+                    const fullMessage = systemPrompt + '\n\n' + userPrompt;
+                    requestBody = {
+                        model: LLM_CONFIG.model,
+                        input: [
+                            {
+                                role: 'user',
+                                content: [{ type: 'input_text', text: fullMessage }]
+                            }
+                        ]
+                    };
+                }
+                
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${LLM_CONFIG.apiKey}`
+                    },
+                    body: JSON.stringify(requestBody)
                 });
 
                 if (!response.ok) {
@@ -1736,7 +1951,21 @@
                 }
 
                 const data = await response.json();
-                const content = data.choices[0].message.content.trim();
+                
+                // 提取回复内容
+                let content;
+                if (LLM_CONFIG.apiType === 'openai') {
+                    content = data.choices[0].message.content.trim();
+                } else if (LLM_CONFIG.apiType === 'ark') {
+                    if (data.output && data.output.message && data.output.message.content) {
+                        content = data.output.message.content;
+                    } else if (data.choices && data.choices.length > 0) {
+                        content = data.choices[0].message.content.trim();
+                    } else {
+                        console.error('无法从 ARK 响应中提取内容:', data);
+                        return null;
+                    }
+                }
                 
                 // 尝试解析 JSON
                 try {
@@ -1877,18 +2106,55 @@
             messages.push({ role: 'user', content: userMessage });
 
             try {
-                const response = await fetch(LLM_CONFIG.apiEndpoint, {
+                let requestBody;
+                let endpoint = LLM_CONFIG.apiEndpoint;
+                
+                if (LLM_CONFIG.apiType === 'openai') {
+                    // OpenAI 格式
+                    requestBody = {
+                        model: LLM_CONFIG.model,
+                        messages: messages,
+                        temperature: LLM_CONFIG.temperature,
+                        max_tokens: LLM_CONFIG.maxTokens
+                    };
+                } else if (LLM_CONFIG.apiType === 'ark') {
+                    // 火山引擎 ARK 格式
+                    let input = [];
+                    
+                    // 添加历史对话
+                    conversationHistory.forEach(chat => {
+                        input.push({
+                            role: 'user',
+                            content: [{ type: 'input_text', text: chat.user }]
+                        });
+                        if (chat.ai) {
+                            input.push({
+                                role: 'assistant',
+                                content: [{ type: 'input_text', text: chat.ai }]
+                            });
+                        }
+                    });
+                    
+                    // 添加系统提示和当前用户消息
+                    const fullMessage = systemPrompt + '\n\n' + userMessage;
+                    input.push({
+                        role: 'user',
+                        content: [{ type: 'input_text', text: fullMessage }]
+                    });
+                    
+                    requestBody = {
+                        model: LLM_CONFIG.model,
+                        input: input
+                    };
+                }
+                
+                const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${LLM_CONFIG.apiKey}`
                     },
-                    body: JSON.stringify({
-                        model: LLM_CONFIG.model,
-                        messages: messages,
-                        temperature: LLM_CONFIG.temperature,
-                        max_tokens: LLM_CONFIG.maxTokens
-                    })
+                    body: JSON.stringify(requestBody)
                 });
 
                 if (!response.ok) {
@@ -1896,7 +2162,23 @@
                 }
 
                 const data = await response.json();
-                return data.choices[0].message.content.trim();
+                
+                // 提取回复内容
+                let content;
+                if (LLM_CONFIG.apiType === 'openai') {
+                    content = data.choices[0].message.content.trim();
+                } else if (LLM_CONFIG.apiType === 'ark') {
+                    if (data.output && data.output.message && data.output.message.content) {
+                        content = data.output.message.content;
+                    } else if (data.choices && data.choices.length > 0) {
+                        content = data.choices[0].message.content.trim();
+                    } else {
+                        console.error('无法从 ARK 响应中提取内容:', data);
+                        return null;
+                    }
+                }
+                
+                return content;
             } catch (error) {
                 console.error('LLM 调用失败:', error);
                 return null;
