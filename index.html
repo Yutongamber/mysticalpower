@@ -1539,10 +1539,10 @@
 
         // LLM Oracle 配置
         const LLM_CONFIG = {
-            apiType: 'openai', // 'openai' 或 'ark'
-            apiEndpoint: 'https://api.openai.com/v1/chat/completions',
-            apiKey: '', // 用户可以在这里填入自己的 API Key
-            model: 'gpt-4o-mini',
+            apiType: 'ark', // 'openai' 或 'ark'
+            apiEndpoint: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions',
+            apiKey: '', // 用户在设置页面输入
+            model: 'doubao-1-5-lite-32k-250115',
             temperature: 0.7,
             maxTokens: 2000,
             useProxy: false // 先尝试直接调用，如果有 CORS 问题再改为 true
