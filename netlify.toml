@@ -1,0 +1,20 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+[dev]
+  # 本地开发服务器配置
+  autoLaunch = false
+  # 尝试设置函数超时（某些版本支持）
+  functionsTimeout = 120
+
+[functions."llm-proxy"]
+  external_node_modules = ["node-fetch"]
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
