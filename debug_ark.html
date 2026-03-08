@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 火山引擎 ARK API 调试工具</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; 
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); 
+            min-height: 100vh; 
+            padding: 20px;
+            color: white;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { font-size: 28px; margin-bottom: 10px; }
+        .card { 
+            background: rgba(255,255,255,0.08); 
+            backdrop-filter: blur(10px); 
+            border-radius: 16px; 
+            padding: 24px; 
+            margin-bottom: 20px; 
+            border: 1px solid rgba(255,255,255,0.1); 
+        }
+        .card-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; color: rgba(102,126,234,0.9); }
+        .form-group { margin-bottom: 16px; }
+        .label { font-size: 14px; color: rgba(255,255,255,0.7); margin-bottom: 8px; display: block; }
+        .input { 
+            width: 100%; 
+            padding: 12px 16px; 
+            border: 2px solid rgba(255,255,255,0.2); 
+            border-radius: 10px; 
+            font-size: 14px; 
+            background: rgba(255,255,255,0.05); 
+            color: white;
+            transition: border-color 0.3s;
+        }
+        .input:focus { outline: none; border-color: #667eea; background: rgba(255,255,255,0.08); }
+        .btn { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+            border: none; 
+            padding: 12px 24px; 
+            border-radius: 10px; 
+            font-size: 16px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            transition: transform 0.2s;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+        .result { 
+            background: rgba(0,0,0,0.3); 
+            border-radius: 10px; 
+            padding: 16px; 
+            margin-top: 16px; 
+            font-family: monospace; 
+            font-size: 13px; 
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .info { color: #60a5fa; }
+        .hint { font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 8px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab { padding: 10px 20px; border-radius: 10px; cursor: pointer; background: rgba(255,255,255,0.1); border: 2px solid transparent; transition: all 0.3s; }
+        .tab.active { background: rgba(102,126,234,0.3); border-color: #667eea; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .compare-item { background: rgba(0,0,0,0.2); padding: 16px; border-radius: 10px; }
+        .compare-title { font-size: 14px; color: rgba(102,126,234,0.9); margin-bottom: 12px; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 火山引擎 ARK API 调试工具</h1>
+            <p>专门用于调试火山引擎 ARK 的 API 调用</p>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('test')">🧪 测试 API</div>
+            <div class="tab" onclick="switchTab('compare')">📊 格式对比</div>
+            <div class="tab" onclick="switchTab('fix')">🔧 修改方案</div>
+        </div>
+
+        <div id="tab-test" class="tab-content active">
+            <div class="card">
+                <div class="card-title">⚙️ API 配置</div>
+                <div class="form-group">
+                    <label class="label">API 端点</label>
+                    <input type="text" class="input" id="api-endpoint" value="https://ark.cn-beijing.volces.com/api/v3/responses">
+                    <div class="hint">💡 火山引擎 ARK 用 /api/v3/responses</div>
+                </div>
+                <div class="form-group">
+                    <label class="label">API Key</label>
+                    <input type="password" class="input" id="api-key" placeholder="你的 API Key">
+                </div>
+                <div class="form-group">
+                    <label class="label">模型名称</label>
+                    <input type="text" class="input" id="model-name" value="glm-4-7-251222">
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🧪 测试请求</div>
+                <div class="form-group">
+                    <label class="label">测试消息</label>
+                    <input type="text" class="input" id="test-message" value="请用一句话介绍易经">
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn" id="test-btn" onclick="testArkApi()">🧪 发送 ARK 格式请求</button>
+                    <button class="btn btn-secondary" onclick="testOpenAiFormat()">🔄 发送 OpenAI 格式请求</button>
+                </div>
+                
+                <div id="test-result" class="result" style="display: none;"></div>
+            </div>
+        </div>
+
+        <div id="tab-compare" class="tab-content">
+            <div class="card">
+                <div class="card-title">📊 OpenAI vs 火山引擎 ARK 格式对比</div>
+                <div class="compare">
+                    <div class="compare-item">
+                        <div class="compare-title">🟢 OpenAI 格式</div>
+                        <div class="result" style="max-height: 300px;">{
+  "model": "gpt-4o-mini",
+  "messages": [
+    {"role": "user", "content": "你好"}
+  ],
+  "temperature": 0.7
+}</div>
+                    </div>
+                    <div class="compare-item">
+                        <div class="compare-title">🔴 火山引擎 ARK 格式</div>
+                        <div class="result" style="max-height: 300px;">{
+  "model": "glm-4-7-251222",
+  "input": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "你好"
+        }
+      ]
+    }
+  ]
+}</div>
+                    </div>
+                </div>
+                <div class="hint" style="margin-top: 16px;">
+                    ⚠️ <strong>关键区别：</strong>
+                    <ul style="margin-left: 20px; margin-top: 8px;">
+                        <li>OpenAI: <code>messages</code> + <code>content: "字符串"</code></li>
+                        <li>ARK: <code>input</code> + <code>content: [{type: "input_text", text: "..."}]</code></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-fix" class="tab-content">
+            <div class="card">
+                <div class="card-title">🔧 修改方案</div>
+                <div style="line-height: 1.8;">
+                    <p>问题：现有前端代码用的是 OpenAI 格式，但火山引擎 ARK 格式不一样。</p>
+                    <br>
+                    <p><strong>解决方案：</strong></p>
+                    <ol style="margin-left: 20px; margin-top: 10px;">
+                        <li>修改 <code>LLM_CONFIG</code>，添加 API 类型选择</li>
+                        <li>根据 API 类型自动转换请求格式</li>
+                        <li>或者写一个适配器层</li>
+                    </ol>
+                    <br>
+                    <p>需要我帮你修改 index.html 来兼容火山引擎 ARK 吗？</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tabName).classList.add('active');
+        }
+
+        async function testArkApi() {
+            const endpoint = document.getElementById('api-endpoint').value.trim();
+            const key = document.getElementById('api-key').value.trim();
+            const model = document.getElementById('model-name').value.trim();
+            const message = document.getElementById('test-message').value.trim();
+            
+            if (!endpoint) { alert('请输入 API 端点'); return; }
+            if (!key) { alert('请输入 API Key'); return; }
+            
+            const resultDiv = document.getElementById('test-result');
+            const testBtn = document.getElementById('test-btn');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = '⏳ 正在发送 ARK 格式请求...';
+            testBtn.disabled = true;
+            
+            // ARK 格式的请求
+            const requestBody = {
+                model: model,
+                input: [
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "input_text",
+                                text: message
+                            }
+                        ]
+                    }
+                ]
+            };
+            
+            console.log('🔍 ARK 格式请求：');
+            console.log('   端点:', endpoint);
+            console.log('   请求体:', JSON.stringify(requestBody, null, 2));
+            
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${key}`
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                let resultText = '';
+                resultText += `📡 响应状态: ${response.status}\n\n`;
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultText += '✅ ARK API 请求成功！\n\n';
+                    resultText += '📄 完整响应:\n';
+                    resultText += JSON.stringify(data, null, 2);
+                    resultDiv.className = 'result success';
+                } else {
+                    const errorText = await response.text();
+                    resultText += '❌ ARK API 请求失败！\n\n';
+                    resultText += '📄 错误响应:\n';
+                    resultText += errorText;
+                    resultDiv.className = 'result error';
+                }
+                
+                resultDiv.textContent = resultText;
+                
+            } catch (error) {
+                console.error('❌ 错误:', error);
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ 发生错误:\n\n${error.name}: ${error.message}\n\n${error.stack}`;
+            }
+            
+            testBtn.disabled = false;
+        }
+
+        async function testOpenAiFormat() {
+            const endpoint = document.getElementById('api-endpoint').value.trim();
+            const key = document.getElementById('api-key').value.trim();
+            const model = document.getElementById('model-name').value.trim();
+            const message = document.getElementById('test-message').value.trim();
+            
+            if (!endpoint) { alert('请输入 API 端点'); return; }
+            if (!key) { alert('请输入 API Key'); return; }
+            
+            const resultDiv = document.getElementById('test-result');
+            const testBtn = document.getElementById('test-btn');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = '⏳ 正在发送 OpenAI 格式请求...';
+            testBtn.disabled = true;
+            
+            // 尝试修改端点为 OpenAI 格式
+            let openAiEndpoint = endpoint;
+            if (endpoint.includes('/responses')) {
+                openAiEndpoint = endpoint.replace('/responses', '/chat/completions');
+            }
+            
+            // OpenAI 格式的请求
+            const requestBody = {
+                model: model,
+                messages: [
+                    { role: 'system', content: '你是一个 helpful 的助手。' },
+                    { role: 'user', content: message }
+                ],
+                temperature: 0.7,
+                max_tokens: 500
+            };
+            
+            console.log('🔍 OpenAI 格式请求：');
+            console.log('   端点:', openAiEndpoint);
+            console.log('   请求体:', JSON.stringify(requestBody, null, 2));
+            
+            try {
+                const response = await fetch(openAiEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${key}`
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                let resultText = '';
+                resultText += `📡 响应状态: ${response.status}\n`;
+                resultText += `📍 使用端点: ${openAiEndpoint}\n\n`;
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultText += '✅ OpenAI 格式请求成功！\n\n';
+                    resultText += '📄 完整响应:\n';
+                    resultText += JSON.stringify(data, null, 2);
+                    resultDiv.className = 'result success';
+                } else {
+                    const errorText = await response.text();
+                    resultText += '❌ OpenAI 格式请求失败！\n\n';
+                    resultText += '📄 错误响应:\n';
+                    resultText += errorText;
+                    resultDiv.className = 'result error';
+                }
+                
+                resultDiv.textContent = resultText;
+                
+            } catch (error) {
+                console.error('❌ 错误:', error);
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ 发生错误:\n\n${error.name}: ${error.message}\n\n${error.stack}`;
+            }
+            
+            testBtn.disabled = false;
+        }
+    </script>
+</body>
+</html>
