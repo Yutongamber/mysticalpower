@@ -1545,7 +1545,7 @@
             model: 'gpt-4o-mini',
             temperature: 0.7,
             maxTokens: 2000,
-            useProxy: true // 使用代理避免 CORS 问题
+            useProxy: false // 先尝试直接调用，如果有 CORS 问题再改为 true
         };
 
         // 代理函数 URL (Netlify Functions)
