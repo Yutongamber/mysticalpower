@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 LLM API 调试工具</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; 
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); 
+            min-height: 100vh; 
+            padding: 20px;
+            color: white;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { font-size: 28px; margin-bottom: 10px; }
+        .card { 
+            background: rgba(255,255,255,0.08); 
+            backdrop-filter: blur(10px); 
+            border-radius: 16px; 
+            padding: 24px; 
+            margin-bottom: 20px; 
+            border: 1px solid rgba(255,255,255,0.1); 
+        }
+        .card-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; color: rgba(102,126,234,0.9); }
+        .form-group { margin-bottom: 16px; }
+        .label { font-size: 14px; color: rgba(255,255,255,0.7); margin-bottom: 8px; display: block; }
+        .input { 
+            width: 100%; 
+            padding: 12px 16px; 
+            border: 2px solid rgba(255,255,255,0.2); 
+            border-radius: 10px; 
+            font-size: 14px; 
+            background: rgba(255,255,255,0.05); 
+            color: white;
+            transition: border-color 0.3s;
+        }
+        .input:focus { outline: none; border-color: #667eea; background: rgba(255,255,255,0.08); }
+        .btn { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+            border: none; 
+            padding: 12px 24px; 
+            border-radius: 10px; 
+            font-size: 16px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            transition: transform 0.2s;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .result { 
+            background: rgba(0,0,0,0.3); 
+            border-radius: 10px; 
+            padding: 16px; 
+            margin-top: 16px; 
+            font-family: monospace; 
+            font-size: 13px; 
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .info { color: #60a5fa; }
+        .hint { font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 8px; }
+        .config-section { display: flex; gap: 10px; margin-top: 10px; }
+        .config-section .btn { flex: 1; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 LLM API 调试工具</h1>
+            <p>帮助排查前端为什么不能调用大模型</p>
+        </div>
+
+        <div class="card">
+            <div class="card-title">⚙️ 1. 配置 API</div>
+            <div class="form-group">
+                <label class="label">API 端点</label>
+                <input type="text" class="input" id="api-endpoint" placeholder="https://ark.cn-beijing.volces.com/api/v3/chat/completions">
+                <div class="hint">💡 火山引擎 ARK: https://ark.cn-beijing.volces.com/api/v3/chat/completions</div>
+                <div class="hint">💡 OpenAI: https://api.openai.com/v1/chat/completions</div>
+            </div>
+            <div class="form-group">
+                <label class="label">API Key</label>
+                <input type="password" class="input" id="api-key" placeholder="你的 API Key">
+            </div>
+            <div class="form-group">
+                <label class="label">模型名称</label>
+                <input type="text" class="input" id="model-name" placeholder="glm-4-7-251222">
+            </div>
+            <div class="config-section">
+                <button class="btn" onclick="loadFromLocalStorage()">📥 从网页读取配置</button>
+                <button class="btn" onclick="saveConfig()">💾 保存配置</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">🧪 2. 测试 API</div>
+            <div class="form-group">
+                <label class="label">测试消息</label>
+                <input type="text" class="input" id="test-message" value="请用一句话介绍易经">
+            </div>
+            <button class="btn" id="test-btn" onclick="testApi()">🧪 发送测试请求</button>
+            
+            <div id="test-result" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">📋 3. 检查列表</div>
+            <div id="checklist">
+                <div class="info">点击"从网页读取配置"后，会自动检查配置</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 页面加载时自动尝试读取配置
+        window.onload = function() {
+            const savedEndpoint = localStorage.getItem('llm_api_endpoint');
+            const savedKey = localStorage.getItem('llm_api_key');
+            const savedModel = localStorage.getItem('llm_model');
+            
+            if (savedEndpoint) document.getElementById('api-endpoint').value = savedEndpoint;
+            if (savedKey) document.getElementById('api-key').value = savedKey;
+            if (savedModel) document.getElementById('model-name').value = savedModel;
+            
+            if (savedEndpoint || savedKey) {
+                updateChecklist();
+            }
+        };
+
+        function loadFromLocalStorage() {
+            const savedEndpoint = localStorage.getItem('llm_api_endpoint');
+            const savedKey = localStorage.getItem('llm_api_key');
+            const savedModel = localStorage.getItem('llm_model');
+            
+            if (savedEndpoint) document.getElementById('api-endpoint').value = savedEndpoint;
+            if (savedKey) document.getElementById('api-key').value = savedKey;
+            if (savedModel) document.getElementById('model-name').value = savedModel;
+            
+            updateChecklist();
+            alert('✅ 已从网页读取配置！');
+        }
+
+        function saveConfig() {
+            const endpoint = document.getElementById('api-endpoint').value.trim();
+            const key = document.getElementById('api-key').value.trim();
+            const model = document.getElementById('model-name').value.trim();
+            
+            if (endpoint) localStorage.setItem('llm_api_endpoint', endpoint);
+            if (key) localStorage.setItem('llm_api_key', key);
+            if (model) localStorage.setItem('llm_model', model);
+            
+            updateChecklist();
+            alert('✅ 配置已保存！网页端也能使用了！');
+        }
+
+        function updateChecklist() {
+            const endpoint = document.getElementById('api-endpoint').value.trim();
+            const key = document.getElementById('api-key').value.trim();
+            const model = document.getElementById('model-name').value.trim();
+            
+            let html = '';
+            
+            // 检查 API 端点
+            if (endpoint) {
+                html += `<div class="success">✅ API 端点已配置: ${endpoint}</div>`;
+                if (endpoint.includes('chat/completions')) {
+                    html += `<div class="success">✅ API 端点包含 /chat/completions (正确)</div>`;
+                } else {
+                    html += `<div class="error">❌ API 端点可能缺少 /chat/completions</div>`;
+                    html += `<div class="hint">💡 试试加上: /chat/completions</div>`;
+                }
+            } else {
+                html += `<div class="error">❌ API 端点未配置</div>`;
+            }
+            
+            // 检查 API Key
+            if (key) {
+                html += `<div class="success">✅ API Key 已配置 (长度: ${key.length})</div>`;
+            } else {
+                html += `<div class="error">❌ API Key 未配置</div>`;
+            }
+            
+            // 检查模型
+            if (model) {
+                html += `<div class="success">✅ 模型已配置: ${model}</div>`;
+            } else {
+                html += `<div class="info">ℹ️ 模型未配置 (将使用默认值)</div>`;
+            }
+            
+            document.getElementById('checklist').innerHTML = html;
+        }
+
+        async function testApi() {
+            const endpoint = document.getElementById('api-endpoint').value.trim();
+            const key = document.getElementById('api-key').value.trim();
+            const model = document.getElementById('model-name').value.trim() || 'gpt-4o-mini';
+            const message = document.getElementById('test-message').value.trim();
+            
+            if (!endpoint) { alert('请输入 API 端点'); return; }
+            if (!key) { alert('请输入 API Key'); return; }
+            
+            const resultDiv = document.getElementById('test-result');
+            const testBtn = document.getElementById('test-btn');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = '⏳ 正在发送请求...';
+            testBtn.disabled = true;
+            
+            console.log('🔍 调试信息：');
+            console.log('   API 端点:', endpoint);
+            console.log('   模型:', model);
+            console.log('   API Key 长度:', key.length);
+            
+            const startTime = Date.now();
+            
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${key}`
+                    },
+                    body: JSON.stringify({
+                        model: model,
+                        messages: [
+                            { role: 'system', content: '你是一个 helpful 的助手。' },
+                            { role: 'user', content: message }
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 500
+                    })
+                });
+                
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+                
+                console.log('   响应状态:', response.status);
+                console.log('   耗时:', duration, 'ms');
+                
+                let resultText = '';
+                resultText += `📡 响应状态: ${response.status}\n`;
+                resultText += `⏱️ 耗时: ${duration}ms\n\n`;
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultText += '✅ 请求成功！\n\n';
+                    resultText += '📄 完整响应:\n';
+                    resultText += JSON.stringify(data, null, 2);
+                    
+                    if (data.choices && data.choices.length > 0) {
+                        resultText += '\n\n💬 AI 回复:\n';
+                        resultText += data.choices[0].message.content;
+                    }
+                    
+                    resultDiv.className = 'result success';
+                } else {
+                    const errorText = await response.text();
+                    resultText += '❌ 请求失败！\n\n';
+                    resultText += '📄 错误响应:\n';
+                    resultText += errorText;
+                    resultDiv.className = 'result error';
+                }
+                
+                resultDiv.textContent = resultText;
+                
+            } catch (error) {
+                console.error('   错误:', error);
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ 发生错误:\n\n${error.name}: ${error.message}\n\n${error.stack}`;
+            }
+            
+            testBtn.disabled = false;
+        }
+    </script>
+</body>
+</html>
