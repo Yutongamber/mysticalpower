@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔮 易经占卜 - MysticalPower</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); min-height: 100vh; padding: 16px; }
+        .container { max-width: 480px; margin: 0 auto; }
+        .header { text-align: center; color: white; margin-bottom: 20px; padding: 16px 0; }
+        .header h1 { font-size: 24px; margin-bottom: 4px; font-weight: 700; }
+        .header p { font-size: 13px; opacity: 0.8; }
+        .card { background: rgba(255,255,255,0.08); backdrop-filter: blur(10px); border-radius: 16px; padding: 20px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.1); }
+        .card-title { font-size: 16px; font-weight: 600; color: white; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .card-title .emoji { font-size: 20px; }
+        .fortune-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 20px; text-align: center; color: white; }
+        .fortune-phrase { font-size: 20px; font-weight: 700; margin-bottom: 12px; line-height: 1.4; }
+        .fortune-hexagram { font-size: 28px; font-weight: 700; margin-bottom: 12px; opacity: 0.95; }
+        .fortune-advice { font-size: 14px; opacity: 0.9; line-height: 1.6; background: rgba(255,255,255,0.15); padding: 10px 14px; border-radius: 8px; }
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .action-btn { background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.15); border-radius: 12px; padding: 20px 16px; text-align: center; cursor: pointer; transition: all 0.3s; color: white; }
+        .action-btn:hover { border-color: #667eea; background: rgba(102,126,234,0.2); transform: translateY(-2px); }
+        .action-btn .emoji { font-size: 32px; margin-bottom: 10px; display: block; }
+        .action-btn .text { font-size: 15px; font-weight: 600; }
+        .action-btn .subtext { font-size: 12px; opacity: 0.7; margin-top: 4px; }
+        .input-section { margin-top: 16px; display: none; }
+        .input-section.show { display: block; }
+        .input-label { font-size: 14px; color: rgba(255,255,255,0.8); margin-bottom: 8px; display: block; }
+        .text-input { width: 100%; padding: 14px 16px; border: 2px solid rgba(255,255,255,0.2); border-radius: 10px; font-size: 15px; margin-bottom: 12px; background: rgba(255,255,255,0.05); color: white; transition: border-color 0.3s; }
+        .text-input:focus { outline: none; border-color: #667eea; background: rgba(255,255,255,0.08); }
+        .text-input::placeholder { color: rgba(255,255,255,0.4); }
+        .method-select { display: flex; gap: 10px; margin-bottom: 12px; }
+        .method-option { flex: 1; background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 14px; text-align: center; cursor: pointer; transition: all 0.3s; color: white; }
+        .method-option.selected { border-color: #667eea; background: rgba(102,126,234,0.3); }
+        .method-option .emoji { font-size: 24px; display: block; margin-bottom: 6px; }
+        .method-option .text { font-size: 13px; font-weight: 500; }
+        .primary-btn { width: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 14px; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 0.2s; }
+        .primary-btn:hover { transform: translateY(-2px); }
+        .primary-btn:active { transform: translateY(0); }
+        .primary-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .loading { display: none; text-align: center; padding: 24px; color: white; }
+        .loading.show { display: block; }
+        .spinner { border: 3px solid rgba(255,255,255,0.2); border-top: 3px solid #667eea; border-radius: 50%; width: 44px; height: 44px; animation: spin 1s linear infinite; margin: 0 auto 12px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .result-card { background: rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; margin-top: 16px; display: none; border: 1px solid rgba(255,255,255,0.1); }
+        .result-card.show { display: block; }
+        .result-item { margin: 12px 0; }
+        .result-label { font-size: 12px; color: rgba(255,255,255,0.6); margin-bottom: 4px; }
+        .result-value { font-size: 14px; color: white; line-height: 1.6; }
+        .result-value.primary { font-size: 22px; font-weight: 700; color: #667eea; }
+        .back-btn { background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 10px 14px; cursor: pointer; font-size: 14px; margin-bottom: 12px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.3s; color: white; }
+        .back-btn:hover { border-color: #667eea; background: rgba(102,126,234,0.2); }
+        .hidden { display: none !important; }
+        .footer { text-align: center; color: rgba(255,255,255,0.4); font-size: 12px; padding: 16px 0; margin-top: 8px; }
+        .api-status { font-size: 12px; text-align: center; padding: 8px; border-radius: 8px; margin-bottom: 12px; }
+        .api-status.online { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .api-status.offline { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔮 易经占卜</h1>
+            <p>古老的智慧，现代的体验</p>
+        </div>
+
+        <div id="api-status" class="api-status offline">
+            🔌 后端API未连接
+        </div>
+
+        <div id="home-page">
+            <div class="card">
+                <div class="card-title"><span class="emoji">✨</span>今日签</div>
+                <div class="fortune-card" id="daily-fortune">
+                    <div class="fortune-phrase" id="daily-phrase">加载中...</div>
+                    <div class="fortune-hexagram" id="daily-hexagram"></div>
+                    <div class="fortune-advice" id="daily-advice"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title"><span class="emoji">🎯</span>你可以做什么</div>
+                <div class="action-grid">
+                    <div class="action-btn" onclick="startDivination()">
+                        <span class="emoji">🎲</span>
+                        <span class="text">起一卦</span>
+                        <span class="subtext">问问题，得答案</span>
+                    </div>
+                    <div class="action-btn" onclick="startConsultation()">
+                        <span class="emoji">🤖</span>
+                        <span class="text">AI咨询</span>
+                        <span class="subtext">人生问题解答</span>
+                    </div>
+                    <div class="action-btn" onclick="startEmotion()">
+                        <span class="emoji">💭</span>
+                        <span class="text">情绪陪伴</span>
+                        <span class="subtext">心情树洞</span>
+                    </div>
+                    <div class="action-btn" onclick="showRecords()">
+                        <span class="emoji">📝</span>
+                        <span class="text">我的记录</span>
+                        <span class="subtext">历史回顾</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="divination-page" class="hidden">
+            <div class="card">
+                <button class="back-btn" onclick="goHome()">← 返回</button>
+                <div class="card-title"><span class="emoji">🎲</span>起一卦</div>
+                
+                <div class="input-section show" id="step1">
+                    <label class="input-label">1️⃣ 请输入你想占卜的问题</label>
+                    <textarea class="text-input" id="divination-question" rows="3" placeholder="例如：我的事业最近会有什么发展？"></textarea>
+                    <button class="primary-btn" onclick="nextStep(2)">下一步 →</button>
+                </div>
+
+                <div class="input-section" id="step2">
+                    <label class="input-label">2️⃣ 选择起卦方式</label>
+                    <div class="method-select">
+                        <div class="method-option" id="method-coins" onclick="selectMethod('coins')">
+                            <span class="emoji">🎲</span>
+                            <span class="text">铜钱起卦</span>
+                        </div>
+                        <div class="method-option" id="method-time" onclick="selectMethod('time')">
+                            <span class="emoji">⏰</span>
+                            <span class="text">时间起卦</span>
+                        </div>
+                    </div>
+                    <button class="primary-btn" id="step2-btn" disabled onclick="doDivination()">🎲 开始起卦</button>
+                </div>
+
+                <div class="loading" id="divination-loading">
+                    <div class="spinner"></div>
+                    <div>正在起卦中...</div>
+                </div>
+
+                <div class="result-card" id="divination-result">
+                    <div class="result-item">
+                        <div class="result-label">🎯 本卦</div>
+                        <div class="result-value primary" id="result-primary"></div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">⚡ 动爻</div>
+                        <div class="result-value" id="result-changing"></div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">🔄 变卦</div>
+                        <div class="result-value primary" id="result-changed"></div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">📖 情境理解</div>
+                        <div class="result-value" id="result-context"></div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">💡 卦象象征</div>
+                        <div class="result-value" id="result-symbolism"></div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">✅ 行动建议</div>
+                        <div class="result-value" id="result-advice"></div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">💝 情绪支持</div>
+                        <div class="result-value" id="result-emotion"></div>
+                    </div>
+                    <button class="primary-btn" onclick="goHome()" style="margin-top: 12px;">🏠 返回首页</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="consultation-page" class="hidden">
+            <div class="card">
+                <button class="back-btn" onclick="goHome()">← 返回</button>
+                <div class="card-title"><span class="emoji">🤖</span>AI人生咨询</div>
+                <div class="input-section show">
+                    <label class="input-label">请输入你的问题</label>
+                    <textarea class="text-input" id="consultation-question" rows="4" placeholder="例如：我最近在考虑换工作，想听听建议..."></textarea>
+                    <button class="primary-btn" onclick="doConsultation()">🤖 开始咨询</button>
+                </div>
+                <div class="loading" id="consultation-loading">
+                    <div class="spinner"></div>
+                    <div>AI思考中...</div>
+                </div>
+                <div class="result-card" id="consultation-result">
+                    <div class="result-item">
+                        <div class="result-label">🤖 AI回答</div>
+                        <div class="result-value" id="consultation-answer" style="font-size: 15px; line-height: 1.8;"></div>
+                    </div>
+                    <button class="primary-btn" onclick="goHome()" style="margin-top: 12px;">🏠 返回首页</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="emotion-page" class="hidden">
+            <div class="card">
+                <button class="back-btn" onclick="goHome()">← 返回</button>
+                <div class="card-title"><span class="emoji">💭</span>情绪陪伴</div>
+                <div class="input-section show">
+                    <label class="input-label">跟我说说你的心情吧</label>
+                    <textarea class="text-input" id="emotion-text" rows="4" placeholder="例如：我最近工作压力好大，感到很焦虑..."></textarea>
+                    <button class="primary-btn" onclick="doEmotion()">💝 开始陪伴</button>
+                </div>
+                <div class="loading" id="emotion-loading">
+                    <div class="spinner"></div>
+                    <div>正在分析中...</div>
+                </div>
+                <div class="result-card" id="emotion-result">
+                    <div class="result-item">
+                        <div class="result-label">🎯 推荐卦象</div>
+                        <div class="result-value primary" id="emotion-hexagram"></div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">💝 安抚建议</div>
+                        <div class="result-value" id="emotion-advice" style="font-size: 15px; line-height: 1.8;"></div>
+                    </div>
+                    <button class="primary-btn" onclick="goHome()" style="margin-top: 12px;">🏠 返回首页</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="records-page" class="hidden">
+            <div class="card">
+                <button class="back-btn" onclick="goHome()">← 返回</button>
+                <div class="card-title"><span class="emoji">📝</span>我的记录</div>
+                <div style="text-align: center; color: rgba(255,255,255,0.6); padding: 40px 20px;">
+                    <div style="font-size: 40px; margin-bottom: 12px;">📝</div>
+                    <div>暂无记录</div>
+                    <div style="font-size: 13px; margin-top: 8px; opacity: 0.7;">开始占卜后，记录会出现在这里</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            ✨ 易经占卜 · MysticalPower (Backend v2)
+        </div>
+    </div>
+
+    <script>
+        // ========== API 配置 ==========
+        const API_BASE = 'http://localhost:8000';
+        
+        let selectedMethod = null;
+        let currentQuestion = '';
+
+        function getUserId() {
+            let userId = localStorage.getItem('divination_user_id');
+            if (!userId) {
+                userId = 'user_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('divination_user_id', userId);
+            }
+            return userId;
+        }
+
+        // ========== API 调用函数 ==========
+        async function checkApiStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                if (data.status === 'healthy') {
+                    document.getElementById('api-status').textContent = '✅ 后端API已连接';
+                    document.getElementById('api-status').classList.remove('offline');
+                    document.getElementById('api-status').classList.add('online');
+                    return true;
+                }
+            } catch (e) {
+                console.log('API not connected:', e);
+            }
+            document.getElementById('api-status').textContent = '🔌 后端API未连接';
+            document.getElementById('api-status').classList.remove('online');
+            document.getElementById('api-status').classList.add('offline');
+            return false;
+        }
+
+        async function apiCall(endpoint, data) {
+            const response = await fetch(`${API_BASE}${endpoint}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            });
+            
+            if (!response.ok) {
+                throw new Error(`API Error: ${response.status}`);
+            }
+            
+            return await response.json();
+        }
+
+        // ========== 页面逻辑 ==========
+        async function initDaily() {
+            const apiOk = await checkApiStatus();
+            if (!apiOk) {
+                document.getElementById('daily-phrase').textContent = '请先启动后端服务';
+                document.getElementById('daily-hexagram').textContent = '';
+                document.getElementById('daily-advice').textContent = '运行: python backend.py';
+                return;
+            }
+
+            try {
+                const result = await apiCall('/api/daily-fortune', {
+                    user_id: getUserId(),
+                    date_str: new Date().toISOString().split('T')[0]
+                });
+
+                if (result.success) {
+                    const data = result.data;
+                    document.getElementById('daily-phrase').textContent = data.fortune_phrase;
+                    document.getElementById('daily-hexagram').textContent = data.hexagram;
+                    document.getElementById('daily-advice').textContent = data.action_advice;
+                }
+            } catch (e) {
+                console.error('Failed to load daily fortune:', e);
+                document.getElementById('daily-phrase').textContent = '加载失败，请刷新重试';
+            }
+        }
+
+        function goHome() {
+            document.getElementById('home-page').classList.remove('hidden');
+            document.getElementById('divination-page').classList.add('hidden');
+            document.getElementById('consultation-page').classList.add('hidden');
+            document.getElementById('emotion-page').classList.add('hidden');
+            document.getElementById('records-page').classList.add('hidden');
+            document.getElementById('divination-question').value = '';
+            document.getElementById('consultation-question').value = '';
+            document.getElementById('emotion-text').value = '';
+            selectedMethod = null;
+            document.querySelectorAll('.method-option').forEach(o => o.classList.remove('selected'));
+            document.getElementById('step2-btn').disabled = true;
+            document.getElementById('step1').classList.add('show');
+            document.getElementById('step2').classList.remove('show');
+            document.getElementById('divination-loading').classList.remove('show');
+            document.getElementById('divination-result').classList.remove('show');
+            document.getElementById('consultation-loading').classList.remove('show');
+            document.getElementById('consultation-result').classList.remove('show');
+            document.getElementById('emotion-loading').classList.remove('show');
+            document.getElementById('emotion-result').classList.remove('show');
+        }
+
+        function startDivination() {
+            document.getElementById('home-page').classList.add('hidden');
+            document.getElementById('divination-page').classList.remove('hidden');
+        }
+
+        function nextStep(step) {
+            if (step === 2) {
+                const q = document.getElementById('divination-question').value;
+                if (!q.trim()) {
+                    alert('请输入问题');
+                    return;
+                }
+                currentQuestion = q;
+                document.getElementById('step1').classList.remove('show');
+                document.getElementById('step2').classList.add('show');
+            }
+        }
+
+        function selectMethod(method) {
+            selectedMethod = method;
+            document.querySelectorAll('.method-option').forEach(o => o.classList.remove('selected'));
+            document.getElementById('method-' + method).classList.add('selected');
+            document.getElementById('step2-btn').disabled = false;
+        }
+
+        async function doDivination() {
+            if (!selectedMethod) return;
+            document.getElementById('step2').classList.remove('show');
+            document.getElementById('divination-loading').classList.add('show');
+            document.getElementById('divination-result').classList.remove('show');
+
+            try {
+                const result = await apiCall('/api/divination', {
+                    question_text: currentQuestion,
+                    method: selectedMethod
+                });
+
+                if (result.success) {
+                    const data = result.data;
+                    document.getElementById('result-primary').textContent = data.primary_hexagram;
+                    document.getElementById('result-changing').textContent = data.changing_line;
+                    document.getElementById('result-changed').textContent = data.changed_hexagram;
+                    document.getElementById('result-context').textContent = data.interpretation.context;
+                    document.getElementById('result-symbolism').textContent = data.interpretation.symbolism;
+                    document.getElementById('result-advice').textContent = data.interpretation.advice;
+                    document.getElementById('result-emotion').textContent = data.interpretation.emotion;
+                }
+            } catch (e) {
+                alert('起卦失败，请检查后端服务是否启动');
+                console.error(e);
+            }
+
+            document.getElementById('divination-loading').classList.remove('show');
+            document.getElementById('divination-result').classList.add('show');
+        }
+
+        function startConsultation() {
+            document.getElementById('home-page').classList.add('hidden');
+            document.getElementById('consultation-page').classList.remove('hidden');
+        }
+
+        async function doConsultation() {
+            const q = document.getElementById('consultation-question').value;
+            if (!q.trim()) {
+                alert('请输入问题');
+                return;
+            }
+            document.getElementById('consultation-loading').classList.add('show');
+            document.getElementById('consultation-result').classList.remove('show');
+
+            try {
+                const result = await apiCall('/api/consultation', {
+                    question: q
+                });
+
+                if (result.success) {
+                    document.getElementById('consultation-answer').textContent = result.data.answer;
+                }
+            } catch (e) {
+                alert('咨询失败，请检查后端服务是否启动');
+                console.error(e);
+            }
+
+            document.getElementById('consultation-loading').classList.remove('show');
+            document.getElementById('consultation-result').classList.add('show');
+        }
+
+        function startEmotion() {
+            document.getElementById('home-page').classList.add('hidden');
+            document.getElementById('emotion-page').classList.remove('hidden');
+        }
+
+        async function doEmotion() {
+            const t = document.getElementById('emotion-text').value;
+            if (!t.trim()) {
+                alert('请输入你的心情');
+                return;
+            }
+            document.getElementById('emotion-loading').classList.add('show');
+            document.getElementById('emotion-result').classList.remove('show');
+
+            try {
+                const result = await apiCall('/api/emotion-guidance', {
+                    text_input: t
+                });
+
+                if (result.success) {
+                    const data = result.data;
+                    document.getElementById('emotion-hexagram').textContent = data.recommended_hexagrams[0];
+                    document.getElementById('emotion-advice').textContent = data.guidance_text + '\n\n' + (data.tone_style || '');
+                }
+            } catch (e) {
+                alert('分析失败，请检查后端服务是否启动');
+                console.error(e);
+            }
+
+            document.getElementById('emotion-loading').classList.remove('show');
+            document.getElementById('emotion-result').classList.add('show');
+        }
+
+        function showRecords() {
+            document.getElementById('home-page').classList.add('hidden');
+            document.getElementById('records-page').classList.remove('hidden');
+        }
+
+        // 初始化
+        initDaily();
+    </script>
+</body>
+</html>
