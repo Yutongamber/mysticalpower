@@ -18,6 +18,7 @@
 ### 1. 打开页面
 
 直接在浏览器中打开 `index.html` 即可使用！
+或者`python -m http.server 8080`然后打开`http://localhost:8080/`
 
 ### 2. 配置 API
 
